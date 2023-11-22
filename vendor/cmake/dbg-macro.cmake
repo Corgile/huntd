@@ -4,7 +4,7 @@ if (NOT EXISTS ${VENDOR_PATH}/dbg-macro)
     set(BRANCH master)
     message(STATUS "拉取 sharkdp/dbg-macro")
     # 拉取 dbg-macro 子模块并切换到指定分支
-    execute_process(COMMAND git submodule add -b ${BRANCH} https://github.com/sharkdp/dbg-macro.git ${VENDOR_PATH}/dbg-macro)
+    execute_process(COMMAND git clone -b ${BRANCH} https://github.com/sharkdp/dbg-macro.git ${VENDOR_PATH}/dbg-macro)
 endif ()
 
 #FetchContent_Declare(dbg_macro GIT_REPOSITORY https://github.com/sharkdp/dbg-macro.git GIT_TAG master)
