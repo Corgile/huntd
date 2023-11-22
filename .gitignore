@@ -1,0 +1,9 @@
+cmake-build-debug
+.idea
+example
+*.pcapng
+*.csv
+# vendor/dbg-macro
+# vendor/libpcap
+# vendor/librdkafka
+# vendor/nlohmann-json

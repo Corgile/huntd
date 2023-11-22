@@ -1,0 +1,12 @@
+[submodule "vendor/libpcap"]
+	path = vendor/libpcap
+	url = https://github.com/the-tcpdump-group/libpcap.git
+[submodule "vendor/dbg-macro"]
+	path = vendor/dbg-macro
+	url = https://github.com/sharkdp/dbg-macro.git
+[submodule "vendor/nlohmann-json"]
+	path = vendor/nlohmann-json
+	url = https://github.com/nlohmann/json.git
+[submodule "vendor/librdkafka"]
+	path = vendor/librdkafka
+	url = https://github.com/confluentinc/librdkafka.git
