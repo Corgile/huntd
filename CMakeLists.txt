@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(hound)
+project(hund)
 
 #if (${BUILD_MODE} STREQUAL "RELEASE_SCOPE")
 #    set(TARGET capture-release)
