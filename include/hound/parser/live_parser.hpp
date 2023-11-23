@@ -15,7 +15,7 @@
 #include <hound/sink/json/json.hpp>
 #include <hound/sink/kafka/kafka.hpp>
 #include <hound/entity/lock_free_queue.hpp>
-
+#include <atomic>
 
 namespace hd::entity {
 	using namespace hd::type;
@@ -25,6 +25,8 @@ namespace hd::entity {
 		explicit LiveParser();
 
 		void startCapture();
+
+		void stopCapture() const;
 
 		~LiveParser();
 
@@ -36,14 +38,13 @@ namespace hd::entity {
 //		std::mutex mtxRawQueue;                   // rawQueue的互斥锁
 //		std::condition_variable cv_producer;      // 生产者条件变量
 //		std::condition_variable cv_consumer;      // 消费者条件变量
+		std::atomic<bool> keepRunning{true};
 
 	private:
-		static void livePacketHandler(u_char* user_data, const struct pcap_pkthdr* pkthdr,
-																	const u_char* packet);
+		static void liveHandler(u_char* user_data, const struct pcap_pkthdr* pkthdr,
+														const u_char* packet);
 
-		[[noreturn]] void consumer_job();
-
-		void processPacket(const raw_packet_info& data);
+		void consumer_job();
 	};
 
 } // entity

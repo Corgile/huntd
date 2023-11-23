@@ -1,3 +1,5 @@
+#include <csignal>
+#include <thread>
 #include <hound/common/hd_util.hpp>
 #include <hound/common/hd_global.hpp>
 #include <hound/parser/live_parser.hpp>
@@ -5,30 +7,40 @@
 
 namespace hd::global {
 	capture_option opt;
-	uint32_t num_captured_packet;
-	uint32_t num_missed_packet;
-	uint32_t num_consumed_packet;
+#if defined(BENCHMARK)
+	uint32_t num_captured_packet = 0;
+	uint32_t num_missed_packet = 0;
+	uint32_t num_consumed_packet = 0;
+	uint32_t num_processed_packet = 0;
+#endif
 }
 
 int main(int argc, char* argv[]) {
 	using namespace hd::global;
-#if defined(BENCHMARK)
-	num_captured_packet = 0;
-	num_missed_packet = 0;
-	num_consumed_packet = 0;
-#endif
 	hd::util::parse_options(opt, argc, argv);
 	opt.print();
+	static std::unique_ptr<LiveParser> liveParser;
+
+	std::signal(SIGINT, [](int signal) {
+		if (signal == SIGINT) {
+			std::cout << "\n\033[31;1m[Ctrl-C]\033[0m received. 正在结束..." << std::endl;
+			liveParser->stopCapture();
+		}
+	});
 	if (opt.live_mode) {
 #if defined(LIVE_MODE)
-		hd::entity::LiveParser().startCapture();
+		liveParser = std::make_unique<LiveParser>();
+		std::thread([&]() {
+			liveParser->startCapture();
+		}).join();
 #endif
 	} else {
-#if defined(OFFLINE_MODE)
+#if defined(DEAD_MODE)
 		hd::entity::DeadParser().processFile();
 #endif
 	}
-#if defined(SEND_KAFKA)
+#if defined(INCLUDE_KAFKA)
+	std::cout << "INCLUDE_KAFKA" << std::endl;
 #endif
 	return 0;
 }

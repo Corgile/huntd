@@ -51,11 +51,15 @@ namespace hd::type {
 		uint64_t buffer: _size;
 	}__attribute__((__packed__));
 
-	struct SomeData{};
+	struct SomeData {
+	};
 
 	struct raw_packet_info {
+		/// don't try to release those 2 pointers
+		/// because pcap does this internally and automatically
 		pcap_pkthdr* pPcapHeader;
 		byte_t* pRawPacket;
+
 		raw_packet_info() = default;
 
 		raw_packet_info(const pcap_pkthdr* pkthdr, const byte_t* packet) {

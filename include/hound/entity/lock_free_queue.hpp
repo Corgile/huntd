@@ -18,41 +18,43 @@ namespace hd::entity {
 	template<typename T, std::size_t SIZE>
 	class LockFreeQueue {
 	private:
-		std::array<T, SIZE> buffer_;
-		std::atomic<std::size_t> head_;
-		std::atomic<std::size_t> tail_;
+		std::array<T, SIZE> mBuffer;
+		std::atomic<std::size_t> mHead;
+		std::atomic<std::size_t> mTail;
 
 	public:
-		LockFreeQueue() : head_(0), tail_(0) {}
+		LockFreeQueue() : mHead(0), mTail(0) {}
 
 		bool push(const T& value) {
-			std::size_t currentTail = tail_.load(std::memory_order_relaxed);
+			std::size_t currentTail = mTail.load(std::memory_order_relaxed);
 			std::size_t nextTail = (currentTail + 1) % SIZE;
 
-			if (nextTail == head_.load(std::memory_order_acquire)) {
+			if (nextTail == mHead.load(std::memory_order_acquire)) {
 #if defined(BENCHMARK)
 				global::num_missed_packet++;
 #endif
 				return false; // 队列已满
 			}
 
-			buffer_[currentTail] = value;
-			tail_.store(nextTail, std::memory_order_release);
+			mBuffer[currentTail] = value;
+			mTail.store(nextTail, std::memory_order_release);
 			return true;
 		}
 
 		bool pop(T& value) {
-			std::size_t currentHead = head_.load(std::memory_order_relaxed);
-			if (currentHead == tail_.load(std::memory_order_acquire)) {
-				return false; // 队列为空
-			}
-
-			value = buffer_[currentHead];
-			head_.store((currentHead + 1) % SIZE, std::memory_order_release);
+			if (empty()) return false;
+			std::size_t currentHead = mHead.load(std::memory_order_relaxed);
+			value = mBuffer[currentHead];
+			mHead.store((currentHead + 1) % SIZE, std::memory_order_release);
 #if defined(BENCHMARK)
 			global::num_consumed_packet++;
 #endif
 			return true;
+		}
+
+		[[nodiscard]] bool empty() const {
+			std::size_t currentHead = mHead.load(std::memory_order_relaxed);
+			return currentHead == mTail.load(std::memory_order_acquire);
 		}
 	};
 

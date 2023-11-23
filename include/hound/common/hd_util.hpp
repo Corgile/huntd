@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <hound/common/hd_global.hpp>
+#include <hound/common/hd_type.hpp>
 #include <hound/entity/capture_option.hpp>
 #include <dbg.h>
 
@@ -21,6 +22,7 @@ namespace hd::util {
 	namespace fs = std::filesystem;
 	using namespace hd::global;
 	using namespace hd::entity;
+	using namespace hd::type;
 	static char error_buffer[PCAP_ERRBUF_SIZE];
 
 #pragma region ShortAndLongOptions
@@ -65,11 +67,25 @@ namespace hd::util {
 			{nullptr, 0,                       nullptr, 0}};
 #pragma endregion
 
+	static void processPacket(const raw_packet_info& data) {
+		auto [pkthdr, packet] = data;
+		if (pkthdr == nullptr or packet == nullptr) return;
+		constexpr int8_t bits = 8;
+		using buf_t = stride_ut<bits>;
+		auto buf_arr = reinterpret_cast<buf_t*>(packet);
+		auto len = pkthdr->caplen / (bits / 8);
+		for (int i = 0; i < len; ++i) {
+			std::cout << buf_arr[i].buffer << ",";
+		}
+		num_processed_packet++;
+		std::cout << "\n";
+	}
+
 	static void build_filter(capture_option& opt) {
 		bool config_filter_set{false};
 		if (not opt.filter.empty()) {
 			opt.filter.append(" and");
-		}
+		} else { opt.include_tcp = true; }
 
 		if (opt.include_tcp or opt.include_udp or opt.include_icmp or opt.include_vlan) {
 			opt.filter.append("(");
@@ -103,19 +119,19 @@ namespace hd::util {
 		return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
 	}
 
-	static void setFilter(pcap_t* handle, std::string& device, std::string& filter, bool live_mode) {
-		if (filter.empty() or handle == nullptr) { return; }
+	static void setFilter(pcap_t* handle, std::string& device) {
+		if (opt.filter.empty() or handle == nullptr) { return; }
 		bpf_u_int32 net{0}, mask{0};
 		bpf_program fp{};
 
-		if (live_mode and not device.empty()) {
+		if (opt.live_mode and not device.empty()) {
 			if (pcap_lookupnet(device.c_str(), &net, &mask, error_buffer) == -1) {
 				dbg("获取设备掩码失败: ", device, error_buffer);
 				exit(EXIT_FAILURE);
 			}
 		}
-		dbg(filter);
-		if (pcap_compile(handle, &fp, filter.c_str(), 0, net) == -1) {
+		dbg(opt.filter);
+		if (pcap_compile(handle, &fp, opt.filter.c_str(), 0, net) == -1) {
 			dbg("解析 Filter 失败: ", pcap_geterr(handle));
 			exit(EXIT_FAILURE);
 		}
@@ -149,7 +165,7 @@ namespace hd::util {
 		}
 		/// apply filter
 		hd::util::build_filter(option);
-		hd::util::setFilter(handle, option.device, option.filter, true);
+		hd::util::setFilter(handle, option.device);
 		link_type = pcap_datalink(handle);
 		dbg(link_type);
 		return handle;
@@ -168,7 +184,7 @@ namespace hd::util {
 		//auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
 		auto handle{open_offline(option.pcap_file.c_str(), hd::util::error_buffer)};
 		hd::util::build_filter(option);
-		hd::util::setFilter(handle, option.device, option.filter, false);
+		hd::util::setFilter(handle, option.device);
 		link_type = pcap_datalink(handle);
 		return handle;
 	}
@@ -209,8 +225,7 @@ namespace hd::util {
 	}
 
 	static void parse_options(capture_option& arguments, int argc, char* argv[]) {
-		int longind = 0;
-		int option;
+		int longind = 0, option, j;
 		opterr = 0;
 		while ((option = getopt_long(argc, argv, shortopts, longopts, &longind)) not_eq -1) {
 			switch (option) {
@@ -221,7 +236,12 @@ namespace hd::util {
 					arguments.caplen = true;
 					break;
 				case 'J':
-					arguments.workers = std::stoi(optarg);
+					j = std::stoi(optarg);
+					if (j < 1) {
+						dbg("worker 必须 >= 1");
+						exit(EXIT_FAILURE);
+					}
+					arguments.workers = j;
 					break;
 				case 'D':
 					arguments.duration = std::stoi(optarg);
