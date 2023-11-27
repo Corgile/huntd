@@ -87,7 +87,8 @@ namespace hd::core {
 
 	/// 定长填充, IPv4, TCP, UDP头部
 	template<int32_t fixedPadSize>
-	static void processByteArray(const ByteArray& rawData, std::string& buffer) {
+	static void processByteArray(bool condition, const ByteArray& rawData, std::string& buffer) {
+		if(not condition) return;
 		switch (global::opt.stride) {
 			case 1:
 				appendHeaderData<fixedPadSize>(buffer, rawData);
@@ -110,7 +111,8 @@ namespace hd::core {
 
 	/// 不定长填充,payload
 	template<bool isPayload = true>
-	static void processByteArray(const ByteArray& payload, std::string& buffer) {
+	static void processByteArray(bool condition, const ByteArray& payload, std::string& buffer) {
+		if(not condition) return;
 		using namespace hd::global;
 		switch (global::opt.stride) {
 			case 1:

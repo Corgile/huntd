@@ -16,8 +16,8 @@ namespace hd::macro {
 
 #pragma region 常量宏 @formatter:off
 
-#if not defined(IPV4_PADDING)
-	#define IPV4_PADDING  60
+#if not defined(IP4_PADDING)
+	#define IP4_PADDING  60
 #endif//IPV4_HEADER_PADDING_LEN
 
 #if not defined(TCP_PADDING)
@@ -32,8 +32,9 @@ namespace hd::macro {
 #pragma region 功能性宏 @formatter:off
 
 #if not defined(APPEND_SPRINTF)
-	#define APPEND_SPRINTF(buffer, format, ...) 			\
+	#define APPEND_SPRINTF(cond, buffer, format, ...) 			\
 	do { 																							\
+		if(not cond) break;															\
 		std::unique_ptr<char> const buff(new char[20]);	\
 		std::sprintf(buff.get(), format, __VA_ARGS__); 	\
 		buffer.append(buff.get()); 											\
@@ -58,7 +59,11 @@ namespace hd::macro {
 
 /// 只针对打印一个变量
 #if not defined(hd_info_one)
-	#define hd_info_one(x)  dbg(x)
+	#if defined(HD_DEV)
+		#define hd_info_one(x)  dbg(x)
+	#else
+		#define hd_info_one(x)  std::printf("%s\n", x)
+	#endif
 #endif//hd_info_one
 
 /// 仅在开发阶段作为调试使用

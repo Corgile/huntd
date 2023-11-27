@@ -26,34 +26,18 @@ namespace hd::entity {
 
 		[[nodiscard]] byte_t* consumeData() override {
 			if (not HasContent) return nullptr;
-			if (global::opt.caplen) {
-				APPEND_SPRINTF(buffer, "%d,", mCapLen);
-			}
-			if (global::opt.timestamp) {
-				APPEND_SPRINTF(buffer, "%ld,%ld,", mTsSec, mTsMsec);
-			}
-			if (global::opt.include_ip4) {
-				hd::core::processByteArray<IPV4_PADDING>(mIpv4Head, buffer);
-			}
-			if (global::opt.include_tcp) {
-				hd::core::processByteArray<TCP_PADDING>(mTchHead, buffer);
-			}
-			if (global::opt.include_udp) {
-				hd::core::processByteArray<UDP_PADDING>(mUdpHead, buffer);
-			}
-			if (global::opt.payload_len > 0) {
-				hd::core::processByteArray<>(mPayload, buffer);
-			}
+			using namespace global;
+			APPEND_SPRINTF(opt.caplen, buffer, "%d,", mCapLen);
+			APPEND_SPRINTF(opt.timestamp, buffer, "%ld,%ld,", mTsSec, mTsMsec);
+			hd::core::processByteArray<IP4_PADDING>(opt.include_ip4, mIpv4Head, buffer);
+			hd::core::processByteArray<TCP_PADDING>(opt.include_tcp, mTchHead, buffer);
+			hd::core::processByteArray<UDP_PADDING>(opt.include_udp, mUdpHead, buffer);
+			hd::core::processByteArray<>(opt.payload_len > 0, mPayload, buffer);
 			buffer.pop_back(); // pop "," at the end.
-			// @formatter:off
-			#if defined(HD_DEV)
-			hd_debug(buffer);
-			#else
-			std::printf("%s\n", buffer.c_str());
-			#endif
-			#if defined(BENCHMARK)
-			++global::num_processed_packet;
-			#endif// @formatter:on
+			hd_info_one(buffer.c_str());
+#if defined(BENCHMARK)
+			++num_processed_packet;
+#endif
 			return nullptr;
 		}
 
