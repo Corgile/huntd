@@ -18,7 +18,7 @@ void LiveParser::startCapture() {
 		/// canceler thread
 		std::thread([this] {
 			std::this_thread::sleep_for(
-				std::chrono::seconds(opt.duration));
+					std::chrono::seconds(opt.duration));
 			this->stopCapture();
 		}).detach();
 	}

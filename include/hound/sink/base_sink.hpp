@@ -34,7 +34,6 @@ namespace hd::entity {
 		int16_t mCapLen;
 		ByteArray mIpv4Head, mTchHead, mUdpHead, mPayload;
 
-		std::unique_ptr<uint8_t> theArr;
 
 	public:
 		bool HasContent{true};

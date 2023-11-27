@@ -7,6 +7,7 @@
 
 namespace hd::global {
 	capture_option opt;
+	std::string fillBit;
 #if defined(BENCHMARK)
 	uint32_t num_captured_packet = 0;
 	std::atomic<int32_t> num_missed_packet = 0;
@@ -18,6 +19,8 @@ namespace hd::global {
 int main(int argc, char* argv[]) {
 	using namespace hd::global;
 	hd::util::parse_options(opt, argc, argv);
+	if (opt.unsign or opt.stride == 1) opt.fill_bit = 0;
+	fillBit = std::to_string(opt.fill_bit).append(",");
 	opt.print();
 	static std::unique_ptr<LiveParser> liveParser;
 

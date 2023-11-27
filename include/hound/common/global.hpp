@@ -10,6 +10,7 @@
 namespace hd::global {
 	using namespace hd::entity;
 	extern capture_option opt;
+	extern std::string fillBit;
 #if defined(BENCHMARK)
 	extern uint32_t num_captured_packet;
 	extern std::atomic<int32_t> num_missed_packet;

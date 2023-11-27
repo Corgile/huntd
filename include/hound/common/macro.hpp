@@ -16,17 +16,17 @@ namespace hd::macro {
 
 #pragma region 常量宏 @formatter:off
 
-#if not defined(IPV4_HEADER_FILL_LEN)
-	#define IPV4_HEADER_FILL_LEN  60
-#endif//IPV4_HEADER_FILL_LEN
+#if not defined(IPV4_PADDING)
+	#define IPV4_PADDING  60
+#endif//IPV4_HEADER_PADDING_LEN
 
-#if not defined(TCP_HEADER_FILL_LEN)
-	#define TCP_HEADER_FILL_LEN  60
-#endif//TCP_HEADER_FILL_LEN
+#if not defined(TCP_PADDING)
+	#define TCP_PADDING  60
+#endif//TCP_HEADER_PADDING_LEN
 
-#if not defined(UDP_HEADER_FILL_LEN)
-	#define UDP_HEADER_FILL_LEN  8
-#endif//UDP_HEADER_FILL_LEN
+#if not defined(UDP_PADDING)
+	#define UDP_PADDING  8
+#endif//UDP_HEADER_PADDING_LEN
 #pragma endregion 常量宏 @formatter:on
 
 #pragma region 功能性宏 @formatter:off
@@ -42,9 +42,9 @@ namespace hd::macro {
 
 #if not defined(HD_ANSI_COLOR)
 	#define HD_ANSI_COLOR
-	#define RED(x)    "\033[31;1m" x "\033[0m"
-	#define GREEN(x)  "\033[32;1m" x "\033[0m"
-	#define YELLOW(x) "\033[33;1m" x "\033[0m"
+	#define RED(x)     "\033[31;1m" x "\033[0m"
+	#define GREEN(x)   "\033[32;1m" x "\033[0m"
+	#define YELLOW(x)  "\033[33;1m" x "\033[0m"
 	#define BLUE(x)    "\033[34;1m" x "\033[0m"
 	#define CYAN(x)    "\033[36;1m" x "\033[0m"
 #endif //HD_ANSI_COLOR
@@ -59,7 +59,7 @@ namespace hd::macro {
 /// 只针对打印一个变量
 #if not defined(hd_info_one)
 	#define hd_info_one(x)  dbg(x)
-#endif//INFO
+#endif//hd_info_one
 
 /// 仅在开发阶段作为调试使用
 #if not defined(hd_debug)

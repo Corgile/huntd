@@ -46,14 +46,10 @@ namespace hd::type {
 	} __attribute__((__packed__));
 
 	template<int8_t _size>
-	struct stride_st {
+	struct stride_t {
 		int64_t buffer: _size;
 	}__attribute__((__packed__));
 
-	template<int8_t _size>
-	struct stride_ut {
-		uint64_t buffer: _size;
-	}__attribute__((__packed__));
 
 	struct raw_packet_info {
 		/// don't try to release those 2 pointers

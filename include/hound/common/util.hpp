@@ -102,8 +102,7 @@ namespace hd::util {
 		bool config_filter_set{false};
 		if (not opt.filter.empty()) {
 			opt.filter.append(" and");
-		}
-		else { opt.include_ip4 = true; }
+		} else { opt.include_ip4 = true; }
 
 		if (opt.include_tcp or opt.include_udp or opt.include_icmp or opt.include_vlan) {
 			opt.filter.append("(");
@@ -287,7 +286,7 @@ namespace hd::util {
 				case 'S':
 					arguments.stride = std::stoi(optarg);
 					if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
-					    arguments.stride not_eq 32 and arguments.stride not_eq 64) {
+							arguments.stride not_eq 32 and arguments.stride not_eq 64) {
 						hd_info("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
 						exit(EXIT_FAILURE);
 					}
@@ -365,12 +364,6 @@ namespace hd::util {
 					break;
 			}
 		}
-	}
-
-	template<typename T>
-	void append_raw_data(std::string& vec, void* rawData, int32_t num_fields) {
-		T* typedData = reinterpret_cast<T*>(rawData);
-		for (int i = 0; i < num_fields; ++i) { vec.append(",").append(std::to_string(typedData[i])); }
 	}
 } // namespace hd::util
 #endif //HOUND_UTILS_HPP
