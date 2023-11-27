@@ -15,7 +15,7 @@ namespace hd::entity {
 		bool include_radiotap;
 		bool include_wlan;
 		bool include_eth;
-		bool include_ipv4;
+		bool include_ip4;
 		bool include_ipv6;
 		bool include_tcp;
 		bool include_udp;

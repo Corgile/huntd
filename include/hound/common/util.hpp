@@ -9,31 +9,36 @@
 #include <getopt.h>
 #include <memory>
 #include <mutex>
-#include <pcap/pcap.h>
 #include <queue>
 #include <string>
-#include <vector>
-#include <hound/common/hd_global.hpp>
-#include <hound/common/hd_type.hpp>
-#include <hound/entity/capture_option.hpp>
 #include <dbg.h>
+#include <pcap/pcap.h>
+#include <hound/common/global.hpp>
+#include <hound/common/type.hpp>
+#include <hound/entity/capture_option.hpp>
+#include <hound/sink/base_sink.hpp>
+#include <hound/sink/console/console.hpp>
+#include <hound/sink/json/json.hpp>
+#include <hound/sink/csv/csv.hpp>
+#include <hound/sink/kafka/kafka.hpp>
 
 namespace hd::util {
 	namespace fs = std::filesystem;
 	using namespace hd::global;
 	using namespace hd::entity;
 	using namespace hd::type;
-	static char error_buffer[PCAP_ERRBUF_SIZE];
+	inline char ByteBuffer[PCAP_ERRBUF_SIZE];
 
 #pragma region ShortAndLongOptions
-	static char const* shortopts = "J:d:D:F:N:K:P:S:I:L:R:E:W:I:p:Cre4ui6whTtV";
+	static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:I:p:Cre4ui6whTtV";
 	static option longopts[] = {
-			/// specify which network interface to capture
+			/// specify which network interface to capture @formatter:off
 			{"device",      required_argument, nullptr, 'd'},
 			{"workers",     required_argument, nullptr, 'J'},
 			{"duration",    required_argument, nullptr, 'D'},
 			/// custom filter for libpcap
 			{"filter",      required_argument, nullptr, 'F'},
+			{"fill"  ,      required_argument, nullptr, 'f'},
 			{"num-packets", required_argument, nullptr, 'N'},
 			/// min packets
 			{"min",         required_argument, nullptr, 'L'},
@@ -65,27 +70,40 @@ namespace hd::util {
 			{"caplen",      no_argument,       nullptr, 'C'},
 			{"verbose",     no_argument,       nullptr, 'V'},
 			{nullptr, 0,                       nullptr, 0}};
-#pragma endregion
+#pragma endregion ShortAndLongOptions //@formatter:on
 
-	static void processPacket(const raw_packet_info& data) {
-		auto [pkthdr, packet] = data;
-		if (pkthdr == nullptr or packet == nullptr) return;
-		constexpr int8_t bits = 8;
-		using buf_t = stride_ut<bits>;
-		auto buf_arr = reinterpret_cast<buf_t*>(packet);
-		auto len = pkthdr->caplen / (bits / 8);
-		for (int i = 0; i < len; ++i) {
-			std::cout << buf_arr[i].buffer << ",";
+	static void processPacket(raw_packet_info& data, uint32_t const _linkType, sink const _sinkType = CONSOLE) {
+		std::unique_ptr<BaseSink> downStreamConsumer;
+		switch (_sinkType) {
+			case CONSOLE:
+				downStreamConsumer = std::make_unique<Console>(data);
+				downStreamConsumer->setLinkType(_linkType);
+				break;
+			case JSON_FILE:
+				downStreamConsumer = std::make_unique<Json>(data);
+				downStreamConsumer->setLinkType(_linkType);
+				break;
+			case TEXT_FILE:
+				downStreamConsumer = std::make_unique<CSV>(data);
+				downStreamConsumer->setLinkType(_linkType);
+				break;
+			case MSG_QUEUE:
+				downStreamConsumer = std::make_unique<Kafka>(data);
+				downStreamConsumer->setLinkType(_linkType);
+				break;
+			default:
+			case SILENT:
+				return;
 		}
-		num_processed_packet++;
-		std::cout << "\n";
+		std::ignore = downStreamConsumer->consumeData();
 	}
 
 	static void build_filter(capture_option& opt) {
 		bool config_filter_set{false};
 		if (not opt.filter.empty()) {
 			opt.filter.append(" and");
-		} else { opt.include_tcp = true; }
+		}
+		else { opt.include_ip4 = true; }
 
 		if (opt.include_tcp or opt.include_udp or opt.include_icmp or opt.include_vlan) {
 			opt.filter.append("(");
@@ -125,49 +143,47 @@ namespace hd::util {
 		bpf_program fp{};
 
 		if (opt.live_mode and not device.empty()) {
-			if (pcap_lookupnet(device.c_str(), &net, &mask, error_buffer) == -1) {
-				dbg("获取设备掩码失败: ", device, error_buffer);
+			if (pcap_lookupnet(device.c_str(), &net, &mask, ByteBuffer) == -1) {
+				hd_info("获取设备掩码失败: ", device, ByteBuffer);
 				exit(EXIT_FAILURE);
 			}
 		}
-		dbg(opt.filter);
+		hd_debug(opt.filter);
 		if (pcap_compile(handle, &fp, opt.filter.c_str(), 0, net) == -1) {
-			dbg("解析 Filter 失败: ", pcap_geterr(handle));
+			hd_info("解析 Filter 失败: ", pcap_geterr(handle));
 			exit(EXIT_FAILURE);
 		}
 
 		if (pcap_setfilter(handle, &fp) == -1) {
-			dbg("设置 Filter 失败: ", pcap_geterr(handle));
+			hd_info("设置 Filter 失败: ", pcap_geterr(handle));
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	static pcap_t*
-	openLiveHandle(capture_option& option, uint32_t& link_type) {
+	static pcap_t* openLiveHandle(capture_option& option, uint32_t& link_type) {
 		/* getFlowId device */
 		if (option.device.empty()) {
 			pcap_if_t* l;
-			int32_t rv{pcap_findalldevs(&l, hd::util::error_buffer)};
+			int32_t rv{pcap_findalldevs(&l, hd::util::ByteBuffer)};
 			if (rv == -1) {
-				dbg("找不到默认网卡设备", hd::util::error_buffer);
+				hd_info("找不到默认网卡设备", hd::util::ByteBuffer);
 				exit(EXIT_FAILURE);
 			}
 			option.device = l->name;
 			pcap_freealldevs(l);
 		}
-		dbg(option.device);
+		hd_debug(option.device);
 		/* open device */
-		auto handle{pcap_open_live(option.device.c_str(), BUFSIZ, 1, 1000,
-															 hd::util::error_buffer)};
+		auto const handle{pcap_open_live(option.device.c_str(), BUFSIZ, 1, 1000, ByteBuffer)};
 		if (handle == nullptr) {
-			dbg("监听网卡设备失败: ", hd::util::error_buffer);
+			hd_info("监听网卡设备失败: ", hd::util::ByteBuffer);
 			exit(EXIT_FAILURE);
 		}
 		/// apply filter
-		hd::util::build_filter(option);
-		hd::util::setFilter(handle, option.device);
+		build_filter(option);
+		setFilter(handle, option.device);
 		link_type = pcap_datalink(handle);
-		dbg(link_type);
+		hd_debug(link_type);
 		return handle;
 	}
 
@@ -176,15 +192,15 @@ namespace hd::util {
 		//using offline = pcap_t* (*)(const char*, u_int, char*);
 		using offline = pcap_t* (*)(const char*, char*);
 		//offline open_offline{pcap_open_offline_with_tstamp_precision};
-		offline open_offline{pcap_open_offline};
+		offline const open_offline{pcap_open_offline};
 		if (not fs::exists(option.pcap_file)) {
-			dbg("无法打开文件 ", option.pcap_file);
+			hd_info("无法打开文件 ", option.pcap_file);
 			exit(EXIT_FAILURE);
 		}
 		//auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
-		auto handle{open_offline(option.pcap_file.c_str(), hd::util::error_buffer)};
-		hd::util::build_filter(option);
-		hd::util::setFilter(handle, option.device);
+		auto const handle{open_offline(option.pcap_file.c_str(), ByteBuffer)};
+		build_filter(option);
+		setFilter(handle, option.device);
 		link_type = pcap_datalink(handle);
 		return handle;
 	}
@@ -238,7 +254,7 @@ namespace hd::util {
 				case 'J':
 					j = std::stoi(optarg);
 					if (j < 1) {
-						dbg("worker 必须 >= 1");
+						hd_info("worker 必须 >= 1");
 						exit(EXIT_FAILURE);
 					}
 					arguments.workers = j;
@@ -249,6 +265,10 @@ namespace hd::util {
 				case 'F':
 					arguments.filter = optarg;
 					break;
+				case 'f':
+					// try-except: fill = std::stoi(optarg);
+					arguments.fill_bit = std::stoi(optarg);
+					break;
 				case 'N':
 					arguments.num_packets = std::stoi(optarg);
 					break;
@@ -257,7 +277,7 @@ namespace hd::util {
 					arguments.kafka_config = optarg;
 					arguments.offline_mode = false;
 					if (arguments.kafka_config.empty()) {
-						dbg("-k, --kafka-config 缺少值");
+						hd_info("-k, --kafka-config 缺少值");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -267,15 +287,15 @@ namespace hd::util {
 				case 'S':
 					arguments.stride = std::stoi(optarg);
 					if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
-							arguments.stride not_eq 32 and arguments.stride not_eq 64) {
-						dbg("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
+					    arguments.stride not_eq 32 and arguments.stride not_eq 64) {
+						hd_info("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
 						exit(EXIT_FAILURE);
 					}
 					break;
 				case 'I':
 					arguments.output_index = std::stoi(optarg);
 					if (arguments.output_index > 5 or arguments.output_index < 0) {
-						dbg("-I, --index 参数错误, 退出程序");
+						hd_info("-I, --index 参数错误, 退出程序");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -292,7 +312,7 @@ namespace hd::util {
 					arguments.write_file = true;
 					arguments.out_path = optarg;
 					if (optarg == nullptr or arguments.out_path.empty()) {
-						dbg("-W, --write 缺少值");
+						hd_info("-W, --write 缺少值");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -301,7 +321,7 @@ namespace hd::util {
 					arguments.live_mode = false;
 					arguments.pcap_file = optarg;
 					if (arguments.pcap_file.empty()) {
-						dbg("-P, --pcap-file 缺少值");
+						hd_info("-P, --pcap-file 缺少值");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -312,7 +332,7 @@ namespace hd::util {
 					arguments.include_eth = true;
 					break;
 				case '4':
-					arguments.include_ipv4 = true;
+					arguments.include_ip4 = true;
 					break;
 				case 'u':
 					arguments.include_udp = true;
@@ -339,7 +359,7 @@ namespace hd::util {
 					arguments.verbose = true;
 					break;
 				case '?':
-					dbg("选项 ", '-', char(optopt), (" 的参数是必需的"));
+					hd_info("选项 ", '-', char(optopt), (" 的参数是必需的"));
 					exit(EXIT_FAILURE);
 				default:
 					break;
@@ -352,6 +372,5 @@ namespace hd::util {
 		T* typedData = reinterpret_cast<T*>(rawData);
 		for (int i = 0; i < num_fields; ++i) { vec.append(",").append(std::to_string(typedData[i])); }
 	}
-
-}// namespace hd::util
+} // namespace hd::util
 #endif //HOUND_UTILS_HPP

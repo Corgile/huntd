@@ -9,7 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <hound/common/hd_type.hpp>
+#include <hound/common/type.hpp>
 #include <hound/sink/console/console.hpp>
 #include <hound/sink/csv/csv.hpp>
 #include <hound/sink/json/json.hpp>
@@ -33,16 +33,11 @@ namespace hd::entity {
 	private:
 		pcap_t* mHandle{nullptr};
 		uint32_t mLinkType{};
-		// TODO: use double buffer
-		hd::entity::LockFreeQueue<raw_packet_info, 1000> rawPacketQueue;
-//		std::mutex mtxRawQueue;                   // rawQueue的互斥锁
-//		std::condition_variable cv_producer;      // 生产者条件变量
-//		std::condition_variable cv_consumer;      // 消费者条件变量
+		hd::entity::LockFreeQueue<raw_packet_info, 2048> lockFreeQueue;
 		std::atomic<bool> keepRunning{true};
 
 	private:
-		static void liveHandler(u_char* user_data, const struct pcap_pkthdr* pkthdr,
-														const u_char* packet);
+		static void liveHandler(u_char*, const struct pcap_pkthdr*, const u_char*);
 
 		void consumer_job();
 	};

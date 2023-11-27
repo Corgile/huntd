@@ -8,5 +8,5 @@ if (NOT EXISTS ${VENDOR_PATH}/nlohmann-json)
     message(STATUS "nlohmann/json switched to ${BRANCH}")
 endif ()
 
-FetchContent_Declare(nlohmann_json SOURCE_DIR ${PROJECT_SOURCE_DIR}/vendor/nlohmann-json)
+FetchContent_Declare(nlohmann_json SOURCE_DIR ${VENDOR_PATH}/nlohmann-json)
 FetchContent_MakeAvailable(nlohmann_json)

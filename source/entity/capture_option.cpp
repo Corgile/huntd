@@ -2,8 +2,8 @@
 // Created by brian on 11/22/23.
 //
 
+#include <hound/common/macro.hpp>
 #include <hound/entity/capture_option.hpp>
-#include <hound/common/hd_macro.hpp>
 
 
 hd::entity::capture_option::capture_option() {
@@ -11,7 +11,7 @@ hd::entity::capture_option::capture_option() {
 	this->include_radiotap = false;
 	this->include_wlan = false;
 	this->include_eth = false;
-	this->include_ipv4 = false;
+	this->include_ip4 = false;
 	this->include_ipv6 = false;
 	this->include_tcp = false;
 	this->include_udp = false;
@@ -51,64 +51,63 @@ hd::entity::capture_option::capture_option() {
 }
 
 void hd::entity::capture_option::print() {
-
-	INFO(CYAN("当前运行参数: "));
+	hd_info(CYAN("当前运行参数: "));
 	if (include_radiotap)
-		INFO(CYAN("radiotap = "), "true");
+		hd_info(CYAN("radiotap = "), "true");
 	if (include_wlan)
-		INFO(CYAN("wlan     = "), "true");
+		hd_info(CYAN("wlan     = "), "true");
 	if (include_eth)
-		INFO(CYAN("eth      = "), "true");
-	if (include_ipv4)
-		INFO(CYAN("ipv4     = "), "true");
+		hd_info(CYAN("eth      = "), "true");
+	if (include_ip4)
+		hd_info(CYAN("ipv4     = "), "true");
 	if (include_ipv6)
-		INFO(CYAN("ipv6     = "), "true");
+		hd_info(CYAN("ipv6     = "), "true");
 	if (include_tcp)
-		INFO(CYAN("tcp      = "), "true");
+		hd_info(CYAN("tcp      = "), "true");
 	if (include_udp)
-		INFO(CYAN("udp      = "), "true");
+		hd_info(CYAN("udp      = "), "true");
 	if (include_icmp)
-		INFO(CYAN("icmp     = "), "true");
+		hd_info(CYAN("icmp     = "), "true");
 	if (include_vlan)
-		INFO(CYAN("vlan     = "), "true");
+		hd_info(CYAN("vlan     = "), "true");
 	if (caplen)
-		INFO(CYAN("caplen   = "), "true");
+		hd_info(CYAN("caplen   = "), "true");
 	if (timestamp)
-		INFO(CYAN("time     = "), "true");
+		hd_info(CYAN("time     = "), "true");
 	if (payload_len > 0)
-		INFO(CYAN("payload  = "), payload_len, " Bytes");
+		hd_info(CYAN("payload  = "), payload_len, " Bytes");
 	if (num_packets <= 0) {
-		INFO(CYAN("Packets  = "), "INF");
+		hd_info(CYAN("Packets  = "), "INF");
 	} else {
-		INFO(CYAN("Packets  = "), num_packets);
+		hd_info(CYAN("Packets  = "), num_packets);
 	}
-	INFO(CYAN("stride   = "), stride);
-	INFO(CYAN("fill_bit = "), fill_bit);
-	if (unsign) INFO(CYAN("unsigned = "), "true");
+	hd_info(CYAN("stride   = "), stride);
+	hd_info(CYAN("fill_bit = "), fill_bit);
+	if (unsign)
+		hd_info(CYAN("unsigned = "), "true");
 	else
-		INFO(CYAN("unsigned = "), "false");
+		hd_info(CYAN("unsigned = "), "false");
 	if (live_mode) {
-		INFO(CYAN("min_pkt  = "), min_packets);
-		INFO(CYAN("max_pkt  = "), max_packets);
-
+		hd_info(CYAN("min_pkt  = "), min_packets);
+		hd_info(CYAN("max_pkt  = "), max_packets);
 	}
-	INFO(CYAN("workers = "), workers);
+	hd_info(CYAN("workers = "), workers);
 	if (this->output_index not_eq -1) {
-		INFO(CYAN("index    = "), this->index_map[output_index]);
+		hd_info(CYAN("index    = "), this->index_map[output_index]);
 	}
 	if (duration > 0) {
-		INFO(CYAN("duration = "), duration, "秒");
+		hd_info(CYAN("duration = "), duration, "秒");
 	}
 	if (send_kafka and not kafka_config.empty()) {
-		INFO(CYAN("config   = "), kafka_config);
+		hd_info(CYAN("config   = "), kafka_config);
 	}
 	if (this->write_file and not out_path.empty()) {
-		INFO(CYAN("output   = "), out_path);
+		hd_info(CYAN("output   = "), out_path);
 	}
 	if (this->offline_mode and not pcap_file.empty()) {
-		INFO(CYAN("pcap_file = "), pcap_file);
+		hd_info(CYAN("pcap_file = "), pcap_file);
 	}
 	if (not device.empty()) {
-		INFO(CYAN("device    = "), device);
+		hd_info(CYAN("device    = "), device);
 	}
 }
