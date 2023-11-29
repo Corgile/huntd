@@ -6,7 +6,7 @@
 #include <hound/parser/dead_parser.hpp>
 
 namespace hd::global {
-	capture_option opt;
+	hd::type::capture_option opt;
 	std::string fillBit;
 #if defined(BENCHMARK)
 	uint32_t num_captured_packet = 0;
@@ -18,11 +18,10 @@ namespace hd::global {
 
 int main(int argc, char* argv[]) {
 	using namespace hd::global;
-	hd::util::parse_options(opt, argc, argv);
+  hd::util::parseOptions(opt, argc, argv);
 	if (opt.unsign or opt.stride == 1) opt.fill_bit = 0;
 	fillBit = std::to_string(opt.fill_bit).append(",");
-	opt.print();
-	static std::unique_ptr<LiveParser> liveParser;
+	static std::unique_ptr<hd::type::LiveParser> liveParser;
 
 	std::signal(SIGINT | SIGTERM | SIGKILL | SIGABRT, [](int signal) {
 		if (signal == SIGINT) {
@@ -43,20 +42,21 @@ int main(int argc, char* argv[]) {
 		}
 	});
 
-	if (opt.live_mode) {
 #if defined(LIVE_MODE)
-		liveParser = std::make_unique<LiveParser>();
+	liveParser = std::make_unique<hd::type::LiveParser>();
+	if (opt.live_mode) {
 		std::thread([&]() {
 			liveParser->startCapture();
 		}).join();
+	} else
 #endif
-	} else {
+	{
 #if defined(DEAD_MODE)
-		hd::entity::DeadParser().processFile();
+		hd::type::DeadParser().processFile();
 #endif
 	}
-#if defined(INCLUDE_KAFKA)
+	#if defined(INCLUDE_KAFKA)
 	std::cout << "INCLUDE_KAFKA" << std::endl;
-#endif
+	#endif
 	return 0;
 }

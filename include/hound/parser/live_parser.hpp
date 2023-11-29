@@ -6,19 +6,12 @@
 #define FC_REFACTORED_LIVE_PARSER_HPP
 
 #include <pcap/pcap.h>
-#include <mutex>
-#include <condition_variable>
-
-#include <hound/common/type.hpp>
-#include <hound/sink/console/console.hpp>
-#include <hound/sink/csv/csv.hpp>
-#include <hound/sink/json/json.hpp>
-#include <hound/sink/kafka/kafka.hpp>
-#include <hound/entity/lock_free_queue.hpp>
 #include <atomic>
+#include <hound/type/lock_free_queue.hpp>
+#include <hound/type/raw_packet_info.hpp>
+#include <hound/sink/base_sink.hpp>
 
-namespace hd::entity {
-	using namespace hd::type;
+namespace hd::type {
 
 	class LiveParser {
 	public:
@@ -33,11 +26,11 @@ namespace hd::entity {
 	private:
 		pcap_t* mHandle{nullptr};
 		uint32_t mLinkType{};
-		hd::entity::LockFreeQueue<raw_packet_info, 2048> lockFreeQueue;
+		LockFreeQueue<raw_packet_info, 2048> lockFreeQueue;
 		std::atomic<bool> keepRunning{true};
+		std::shared_ptr<BaseSink> mSink;
 
-	private:
-		static void liveHandler(u_char*, const struct pcap_pkthdr*, const u_char*);
+		static void liveHandler(u_char*, const pcap_pkthdr*, const u_char*);
 
 		void consumer_job();
 	};

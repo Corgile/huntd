@@ -3,10 +3,10 @@
 //
 
 #include <hound/common/macro.hpp>
-#include <hound/entity/capture_option.hpp>
+#include <hound/type/capture_option.hpp>
 
 
-hd::entity::capture_option::capture_option() {
+hd::type::capture_option::capture_option() {
 	/// filter
 	this->include_radiotap = false;
 	this->include_wlan = false;
@@ -42,15 +42,15 @@ hd::entity::capture_option::capture_option() {
 	this->device = {};
 
 	this->index_map = {
-			{0, "src_ip"},
-			{1, "dst_ip"},
-			{2, "src_prt"},
-			{3, "dst_prt"},
-			{4, "flow_id"}
+		{0, "src_ip"},
+		{1, "dst_ip"},
+		{2, "src_prt"},
+		{3, "dst_prt"},
+		{4, "flow_id"}
 	};
 }
 
-void hd::entity::capture_option::print() {
+void hd::type::capture_option::print() {
 	hd_info(CYAN("当前运行参数: "));
 	if (include_radiotap)
 		hd_info(CYAN("radiotap = "), "true");
@@ -78,7 +78,8 @@ void hd::entity::capture_option::print() {
 		hd_info(CYAN("payload  = "), payload_len, " Bytes");
 	if (num_packets <= 0) {
 		hd_info(CYAN("Packets  = "), "INF");
-	} else {
+	}
+	else {
 		hd_info(CYAN("Packets  = "), num_packets);
 	}
 	hd_info(CYAN("stride   = "), stride);
@@ -91,7 +92,7 @@ void hd::entity::capture_option::print() {
 		hd_info(CYAN("min_pkt  = "), min_packets);
 		hd_info(CYAN("max_pkt  = "), max_packets);
 	}
-	hd_info(CYAN("workers = "), workers);
+	hd_info(CYAN("workers  = "), workers);
 	if (this->output_index not_eq -1) {
 		hd_info(CYAN("index    = "), this->index_map[output_index]);
 	}
@@ -108,6 +109,12 @@ void hd::entity::capture_option::print() {
 		hd_info(CYAN("pcap_file = "), pcap_file);
 	}
 	if (not device.empty()) {
-		hd_info(CYAN("device    = "), device);
+		hd_info(CYAN("device   = "), device);
+	}
+}
+
+hd::type::capture_option::~capture_option() {
+	if (verbose) {
+		print();
 	}
 }

@@ -1,16 +1,25 @@
 cmake_minimum_required(VERSION 3.25)
 project(hound)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(TARGET hd)
 # kafka
 set(SEND_KAFKA CACHE BOOL "是否包含Kafka功能" OFF)
+# !>> vendor
+set(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
+# 如果vendor文件夹不存在，先创建
+if (NOT EXISTS ${VENDOR_PATH})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${VENDOR_PATH})
+endif ()
+set(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
+include(third-party)
+# !<< vendor
 
+# !>> 处理编译宏
 # -DBUILD_MODE:STRING=OFFLINE_MODE,LIVE_MODE,BENCHMARK
-string(REGEX MATCHALL "[A-Z_]+|[a-z_]+" result ${BUILD_MODE})
+string(REGEX MATCHALL [A-Za-z_]+ result ${BUILD_MODE})
 list(SORT result COMPARE STRING ORDER ASCENDING)
-
 foreach (macro ${result})
-    message(STATUS ${macro})
+    message(STATUS "${BoldWhite}Adding Macro: ${BoldCyan}${macro}${ColorReset}")
     add_compile_definitions(${macro})
     if (${macro} STREQUAL "DEAD_MODE")
         set(TARGET "${TARGET}-dead")
@@ -26,29 +35,12 @@ foreach (macro ${result})
         set(SEND_KAFKA ON)
     endif ()
 endforeach ()
-
-message(STATUS "Build Target:  ${TARGET}")
-
-add_compile_definitions(DBG_MACRO_NO_WARNING)
-
-# vendor
-set(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
-# 如果vendor文件夹不存在，先创建
-if (NOT EXISTS ${VENDOR_PATH})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${VENDOR_PATH})
-endif ()
-set(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
-
-# TODO 根据build类型添加所需依赖
-include(json)
-include(dbg-macro)
-if (SEND_KAFKA)
-    include(kafka)
-endif ()
-include(pcap)
+message(STATUS "${BoldGreen}Build Target:  ${TARGET}${ColorReset}")
+# !<< 处理编译宏
 
 # all public header for all source files
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/thirdparty)
 #@formatter:off
 aux_source_directory(source               SOURCE_FILES)
 aux_source_directory(source/parser        SOURCE_FILES)

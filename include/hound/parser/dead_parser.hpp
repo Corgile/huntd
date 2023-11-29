@@ -5,11 +5,10 @@
 #ifndef FC_REFACTORED_DEAD_PARSER_HPP
 #define FC_REFACTORED_DEAD_PARSER_HPP
 
-#include <hound/sink/console/console.hpp>
-#include <hound/sink/csv/csv.hpp>
-#include <hound/sink/json/json.hpp>
+#include "hound/sink/impl/text_file_sink.hpp"
+#include "hound/sink/impl/json_file_sink.hpp"
 
-namespace hd::entity {
+namespace hd::type {
 	class DeadParser {
 
 	public:

@@ -5,11 +5,11 @@
 #ifndef HOUND_GLOBAL_HPP
 #define HOUND_GLOBAL_HPP
 
-#include <hound/entity/capture_option.hpp>
+#include <atomic>
+#include <hound/type/capture_option.hpp>
 
 namespace hd::global {
-	using namespace hd::entity;
-	extern capture_option opt;
+	extern hd::type::capture_option opt;
 	extern std::string fillBit;
 #if defined(BENCHMARK)
 	extern uint32_t num_captured_packet;

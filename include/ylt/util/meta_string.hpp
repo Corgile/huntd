@@ -108,9 +108,11 @@ struct meta_string {
   }
 
   constexpr bool contains(std::string_view str) const noexcept {
-    return str.size() <= size()
-               ? std::search(begin(), end(), str.begin(), str.end()) != end()
-               : false;
+		if (str.size() <= size()) {
+			return std::search(begin(), end(), str.begin(), str.end()) != end();
+		} else {
+			return false;
+		}
   }
 
   static constexpr size_t substr_len(size_t pos, size_t count) {
