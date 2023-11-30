@@ -9,11 +9,11 @@
 #include <hound/common/macro.hpp>
 
 #include <hound/sink/impl/text_file_sink.hpp>
+#include <hound/sink/impl/json_file_sink.hpp>
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::openLiveHandle(global::opt, this->mLinkType);
-  mSink.reset(new TextFileSink(global::opt.out_path));
-//  processor.reset(new BaseProcessor());
+  mSink.reset(new BaseSink(global::opt.out_path));
 }
 
 void hd::type::LiveParser::startCapture() {
@@ -48,9 +48,9 @@ void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkt
 void hd::type::LiveParser::consumer_job() {
   /// 采用标志变量keepRunning来控制detach的线程
   while (keepRunning.load(std::memory_order_acquire)) {
-    raw_packet_info packetInfo{nullptr, nullptr};
-    if (not this->lockFreeQueue.pop(packetInfo)) continue;
-    mSink->consumeData({packetInfo});
+    raw_packet_info packetInfo = this->lockFreeQueue.pop();
+    if (packetInfo.info_hdr == nullptr) continue;
+    mSink->consumeData(ParsedData(packetInfo));
   }
 }
 
@@ -68,5 +68,5 @@ hd::type::LiveParser::~LiveParser() {
   }
   /// 再控制游离线程停止访问主线程的资源
   keepRunning.store(false, std::memory_order_release);
-  hd_debug(this->lockFreeQueue.size());
+  hd_debug(this->lockFreeQueue.count());
 }

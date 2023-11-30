@@ -39,7 +39,8 @@ public:
   void consumeData(ParsedData const& data) override {
     if (not data.HasContent) return;
     std::string buffer;
-    this->fillCsvBuffer(data, buffer, '\n');
+    this->fillCsvBuffer(data, buffer);
+    buffer.append("\n");
     this->mOutFile << std::move(buffer);
   }
 };

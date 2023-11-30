@@ -22,7 +22,7 @@ using namespace hd::type;
 inline char ByteBuffer[PCAP_ERRBUF_SIZE];
 
 #pragma region ShortAndLongOptions
-static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:I:p:Cre4ui6whTtV";
+static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:I:p:Cre4ui6whTtVU";
 static option longopts[] = {
     /// specify which network interface to capture @formatter:off
 			{"device",      required_argument, nullptr, 'd'},
@@ -61,10 +61,11 @@ static option longopts[] = {
 			{"timestamp",   no_argument,       nullptr, 'T'},
 			{"caplen",      no_argument,       nullptr, 'C'},
 			{"verbose",     no_argument,       nullptr, 'V'},
+			{"unsigned",     no_argument,       nullptr, 'U'},
 			{nullptr, 0,                       nullptr, 0}};
 #pragma endregion ShortAndLongOptions //@formatter:on
 
-static void build_filter(capture_option& opt) {
+static void buildFilter(capture_option& opt) {
   bool config_filter_set{false};
   if (not opt.filter.empty()) {
     opt.filter.append(" and");
@@ -145,15 +146,14 @@ static pcap_t* openLiveHandle(capture_option& option, uint32_t& link_type) {
     exit(EXIT_FAILURE);
   }
   /// apply filter
-  build_filter(option);
+  buildFilter(option);
   setFilter(handle, option.device);
   // link_type = pcap_datalink(handle);
   // hd_debug(link_type);
   return handle;
 }
 
-static pcap_t*
-openDeadHandle(capture_option& option, uint32_t& link_type) {
+static pcap_t* openDeadHandle(capture_option& option, uint32_t& link_type) {
   //using offline = pcap_t* (*)(const char*, u_int, char*);
   using offline = pcap_t* (*)(const char*, char*);
   //offline open_offline{pcap_open_offline_with_tstamp_precision};
@@ -164,7 +164,7 @@ openDeadHandle(capture_option& option, uint32_t& link_type) {
   }
   //auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
   auto const handle{open_offline(option.pcap_file.c_str(), ByteBuffer)};
-  build_filter(option);
+  buildFilter(option);
   setFilter(handle, option.device);
   link_type = pcap_datalink(handle);
   return handle;
@@ -322,6 +322,9 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
         break;
       case 'V':
         arguments.verbose = true;
+        break;
+      case 'U':
+        arguments.unsign = true;
         break;
       case '?':
         hd_info("选项 ", '-', char(optopt), (" 的参数是必需的"));

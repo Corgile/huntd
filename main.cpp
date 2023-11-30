@@ -19,7 +19,7 @@ namespace hd::global {
 int main(int argc, char* argv[]) {
 	using namespace hd::global;
   hd::util::parseOptions(opt, argc, argv);
-	if (opt.unsign or opt.stride == 1) opt.fill_bit = 0;
+	if (opt.unsign or opt.stride == 1) opt.fill_bit |= 0;
 	fillBit = std::to_string(opt.fill_bit).append(",");
 	static std::unique_ptr<hd::type::LiveParser> liveParser;
 

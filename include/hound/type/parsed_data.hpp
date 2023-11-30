@@ -18,6 +18,7 @@
 #include <hound/type/byte_array.hpp>
 #include <hound/type/raw_packet_info.hpp>
 #include <hound/type/vlan_header.hpp>
+#include <hound/type/value_triple.hpp>
 
 #define ETHERTYPE_IPV4 ETHERTYPE_IP
 
@@ -33,18 +34,26 @@ struct ParsedData {
 
   std::string mTimestamp, mCapLen;
   ByteArray mIPv4Head, mTcpHead, mUdpHead, mPayload;
-
+  ValueTriple mPcapHead;
 public:
   bool HasContent{true};
 
-  ParsedData() = default;
+  ParsedData() = delete;
 
   virtual ~ParsedData() = default;
 
   ParsedData(raw_packet_info const& data) {
-    this->mCapLen = std::to_string(data.info_hdr->caplen);
-    this->mTimestamp = std::to_string(data.info_hdr->ts.tv_sec).append(",")
-        .append(std::to_string(data.info_hdr->ts.tv_usec));
+    this->mPcapHead = {
+        (uint32_t) data.info_hdr->ts.tv_sec,
+        (uint32_t) data.info_hdr->ts.tv_usec,
+        (uint32_t) data.info_hdr->caplen
+    };
+    this->mCapLen.assign(std::to_string(mPcapHead.caplen));
+    this->mTimestamp.assign(
+        std::to_string(mPcapHead.ts_sec)
+            .append(",")
+            .append(std::to_string(mPcapHead.ts_usec))
+    );
     this->HasContent = processRawPacket(data.byte_arr);
   }
 

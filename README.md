@@ -15,3 +15,9 @@ mkdir build
 cd build 
 cmake -DBUILD_MODE:STRING=LIVE_MODE,DEAD_MODE,INCLUDE_KAFKA,HD_DEV,BENCHMARK ..
 ```
+
+## TODO
+
+- [ ] 时间戳为什么解析突然不正确了
+- [ ] synced_stream 只保证在调用一次 << 的情况下输出到文件的正确位置，两次函数调用可能会丢掉锁
+- [*] 回归测试 

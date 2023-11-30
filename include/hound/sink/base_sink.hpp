@@ -17,12 +17,14 @@ namespace hd::type {
 class BaseSink {
   SyncedStream<std::ostream&> mConsole;
 public:
+  BaseSink(std::string const&) : mConsole(std::cout) {}
+
   BaseSink() : mConsole(std::cout) {}
 
   virtual void consumeData(ParsedData const& data) {
     if (not data.HasContent) return;
     std::string buffer;
-    this->fillCsvBuffer(data, buffer, '\0');
+    this->fillCsvBuffer(data, buffer);
 #if defined(HD_DEV)
     hd_info_one(std::move(buffer));
 #else
@@ -37,16 +39,21 @@ public:
   virtual ~BaseSink() {};
 
 protected:
-  void fillCsvBuffer(ParsedData const& data, std::string& buffer, char _back) {
+  void fillCsvBuffer(ParsedData const& data, std::string& buffer) {
     using namespace global;
     buffer.append(data.m5Tuple).append(",");
     if (opt.caplen) buffer.append(data.mCapLen).append(",");
     if (opt.timestamp) buffer.append(data.mTimestamp).append(",");
-    hd::core::processByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIPv4Head, buffer);
-    hd::core::processByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);
-    hd::core::processByteArray<UDP_PADSIZE>(opt.include_udp, data.mUdpHead, buffer);
-    hd::core::processByteArray<>(opt.payload_len > 0, data.mPayload, buffer);
-    buffer.back() = _back;
+    this->fillRawBitVec(data, buffer);
+  }
+
+  void fillRawBitVec(ParsedData const& data, std::string& buffer) {
+    using namespace global;
+    hd::core::ProcessByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIPv4Head, buffer);
+    hd::core::ProcessByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);
+    hd::core::ProcessByteArray<UDP_PADSIZE>(opt.include_udp, data.mUdpHead, buffer);
+    hd::core::ProcessByteArray(opt.payload_len > 0, data.mPayload, buffer);
+    buffer.pop_back();
   }
 };
 } // entity

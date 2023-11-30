@@ -3,6 +3,7 @@ cmake-build-*
 example
 *.pcapng
 *.csv
+*.json
 vendor/dbg-macro
 vendor/libpcap
 vendor/librdkafka

@@ -28,12 +28,14 @@ public:
   template<typename Func, typename... Args>
   auto SyncInvoke(Func&& func, Args&& ... args) {
     std::lock_guard<std::mutex> lock(mutex_);
-    return std::invoke(std::forward<Func>(func), mOutStream, std::forward<Args>(args)...);
+    // return std::invoke(std::forward<Func>(func), mOutStream, std::forward<Args>(args)...);
+    return std::forward<Func>(func)(mOutStream, std::forward<Args>(args)...);
   }
 
   template<typename Func, typename... Args>
   auto invoke(Func&& func, Args&& ... args) {
-    return std::invoke(std::forward<Func>(func), mOutStream, std::forward<Args>(args)...);
+    // return std::invoke(std::forward<Func>(func), mOutStream, std::forward<Args>(args)...);
+    return std::forward<Func>(func)(mOutStream, std::forward<Args>(args)...);
   }
 
   template<typename T>

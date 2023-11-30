@@ -40,7 +40,7 @@ message(STATUS "${BoldGreen}Build Target:  ${TARGET}${ColorReset}")
 
 # all public header for all source files
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include/thirdparty)
+include_directories(${PROJECT_SOURCE_DIR}/include/yalanting)
 #@formatter:off
 aux_source_directory(source               SOURCE_FILES)
 aux_source_directory(source/parser        SOURCE_FILES)
