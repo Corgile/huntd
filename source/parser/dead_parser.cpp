@@ -6,13 +6,13 @@
 
 #if defined(BENCHMARK)
 
-	#include <hound/type/timer.hpp>
+  #include <hound/type/timer.hpp>
 
 #endif
 
 void hd::type::DeadParser::processFile() {
 #if defined(BENCHMARK)
-	int _timeConsumption = 0;
-	Timer timer(_timeConsumption);
+  int _timeConsumption = 0;
+  Timer timer(_timeConsumption);
 #endif
 }

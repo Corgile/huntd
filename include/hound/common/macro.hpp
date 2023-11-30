@@ -9,10 +9,10 @@
 #include <iostream>
 
 namespace hd::macro {
-	template<typename... T>
-	static void printL(T... args) {
-		((std::cout << args), ...) << "\n";
-	}
+template<typename... T>
+static void printL(T... args) {
+  ((std::cout << args), ...) << "\n";
+}
 } // namespace hd::macro
 
 #pragma region 常量宏 @formatter:off

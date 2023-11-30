@@ -10,10 +10,22 @@
 
 #include <hound/sink/impl/text_file_sink.hpp>
 #include <hound/sink/impl/json_file_sink.hpp>
+#include <hound/sink/impl/kafka/kafka_sink.hpp>
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::openLiveHandle(global::opt, this->mLinkType);
-  mSink.reset(new BaseSink(global::opt.out_path));
+  if (global::opt.filename.empty()) {
+    mSink.reset(new BaseSink(global::opt.filename));
+    return;
+  }
+  if (global::opt.filename.ends_with(".json")) {
+    mSink.reset(new JsonFileSink(global::opt.filename));
+  } else {
+    mSink.reset(new TextFileSink(global::opt.filename));
+  }
+  if (global::opt.send_kafka) {
+    mSink.reset(new KafkaSink(global::opt.filename));
+  }
 }
 
 void hd::type::LiveParser::startCapture() {

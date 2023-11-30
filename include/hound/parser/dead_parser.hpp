@@ -9,11 +9,11 @@
 #include "hound/sink/impl/json_file_sink.hpp"
 
 namespace hd::type {
-	class DeadParser {
+class DeadParser {
 
-	public:
-		void processFile();
-	};
+public:
+  void processFile();
+};
 }
 
 

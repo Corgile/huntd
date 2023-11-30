@@ -9,23 +9,23 @@
 
 namespace hd::type {
 
-	template<typename T>
-	struct MyValuePair {
-		T minVal, maxVal;
+template<typename T>
+struct MyValuePair {
+  T minVal, maxVal;
 
-		MyValuePair() = default;
+  MyValuePair() = default;
 
-		MyValuePair(T& _v1, T& _v2)
-				: minVal{std::min(_v1, _v2)},
-					maxVal{std::max(_v1, _v2)} {
-			// std::tie(std::minmax({v1, v2}));
-		}
+  MyValuePair(T& _v1, T& _v2)
+      : minVal{std::min(_v1, _v2)},
+        maxVal{std::max(_v1, _v2)} {
+    // std::tie(std::minmax({v1, v2}));
+  }
 
-		template<typename U, typename V>
-		MyValuePair(const std::pair<U, V>& pair)
-				: minVal{pair.first}, maxVal{pair.second} {
-		}
-	};
+  template<typename U, typename V>
+  MyValuePair(const std::pair<U, V>& pair)
+      : minVal{pair.first}, maxVal{pair.second} {
+  }
+};
 
 } // entity
 

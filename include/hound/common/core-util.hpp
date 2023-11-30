@@ -15,6 +15,7 @@ using namespace hd::global;
 #ifndef BYTE2BIT
   #define BYTE2BIT(x) ((x) << 3)
 #endif//BYTE2BIT
+
 /*
 
 template<int32_t fixedPadSize, int8_t STRIDE>

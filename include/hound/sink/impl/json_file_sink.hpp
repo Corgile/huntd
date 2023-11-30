@@ -39,6 +39,7 @@ public:
 
   /// 写入json文件
   void consumeData(ParsedData const& data) override {
+    if (not data.HasContent) return;
     using namespace hd::entity;
     using namespace hd::global;
     std::string buffer;
@@ -62,7 +63,7 @@ public:
       }
       if (_packetList.empty()) goto merge_into_existing_flow;
       if (_packetList.back().ts_sec - data.mPcapHead.ts_sec >= opt.interval or _packetList.size() == opt.max_packets) {
-        if(_packetList.size() >= opt.min_packets) {
+        if (_packetList.size() >= opt.min_packets) {
           hd_flow flow{data.mFlowKey, std::move(_packetList)};
           std::string _jsonStr;
           struct_json::to_json(flow, _jsonStr); // 序列化

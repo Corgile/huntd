@@ -275,8 +275,8 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
         break;
       case 'W':
         arguments.write_file = true;
-        arguments.out_path = optarg;
-        if (optarg == nullptr or arguments.out_path.empty()) {
+        arguments.filename = optarg;
+        if (optarg == nullptr or arguments.filename.empty()) {
           hd_info("-W, --write 缺少值");
           exit(EXIT_FAILURE);
         }
