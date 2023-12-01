@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     liveParser->stopCapture();
   #endif
   #if defined(DEAD_MODE)
-    deadParser->stopProcess();
+    // deadParser->stopProcess();
   #endif
   });
 

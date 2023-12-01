@@ -12,7 +12,7 @@
 
 void hd::type::DeadParser::processFile() {
 #if defined(BENCHMARK)
-  int _timeConsumption = 0;
+  double _timeConsumption = 0;
   Timer timer(_timeConsumption);
 #endif
 }

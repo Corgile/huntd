@@ -13,9 +13,9 @@
 namespace hd::entity {
 
 struct hd_packet {
-  uint32_t ts_sec;
-  uint32_t ts_usec;
-  uint32_t packet_len;
+  __time_t ts_sec;
+  __suseconds_t ts_usec;
+  bpf_u_int32 packet_len;
   std::string bitvec;
 };
 REFLECTION(hd_packet, ts_usec, ts_sec, packet_len, bitvec)
