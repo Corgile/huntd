@@ -17,10 +17,10 @@ namespace hd::global {
 extern hd::type::capture_option opt;
 extern std::string fillBit;
 #if defined(BENCHMARK)
-extern uint32_t num_captured_packet;
-extern std::atomic<int32_t> num_missed_packet;
+extern std::atomic<int32_t> num_captured_packet;
+extern std::atomic<int32_t> num_dropped_packets;
 extern std::atomic<int32_t> num_consumed_packet;
-extern std::atomic<int32_t> num_processed_packet;
+extern std::atomic<int32_t> num_written_csv;
 #endif
 }
 

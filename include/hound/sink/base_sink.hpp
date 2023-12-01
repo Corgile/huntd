@@ -30,10 +30,6 @@ public:
 #else
     mConsole << std::move(buffer);
 #endif
-
-#if defined(BENCHMARK)
-    ++global::num_processed_packet;
-#endif//-#if defined(BENCHMARK)
   };
 
   virtual ~BaseSink() {};

@@ -7,9 +7,11 @@
 
 #include <pcap/pcap.h>
 #include <atomic>
-#include <hound/type/lock_free_queue.hpp>
+// #include <hound/type/lock_free_queue.hpp>
+#include <hound/type/lock_free_queue_v.hpp>
 #include <hound/type/raw_packet_info.hpp>
 #include <hound/sink/base_sink.hpp>
+// #include <hound/type/concurrent_queue.hpp>
 
 namespace hd::type {
 
@@ -30,11 +32,17 @@ private:
   void consumer_job();
 
 private:
+
+
+private:
   pcap_t* mHandle{nullptr};
   uint32_t mLinkType{};
-  LockFreeQueue<raw_packet_info, 8192> lockFreeQueue;
+  entity::LockFreeQueue<raw_packet_info, 8192> lockFreeQueue;
+  // moodycamel::ConcurrentQueue<raw_packet_info> lockFreeQueue;
   std::atomic<bool> keepRunning{true};
   std::shared_ptr<BaseSink> mSink;
+
+
 };
 
 } // entity

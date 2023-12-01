@@ -44,9 +44,9 @@ public:
 
   ParsedData(raw_packet_info const& data) {
     this->mPcapHead = {
-        (uint32_t) data.info_hdr->ts.tv_sec,
-        (uint32_t) data.info_hdr->ts.tv_usec,
-        (uint32_t) data.info_hdr->caplen
+        data.info_hdr->ts.tv_sec,
+        data.info_hdr->ts.tv_usec,
+        data.info_hdr->caplen
     };
     this->mCapLen.assign(std::to_string(mPcapHead.caplen));
     this->mTimestamp.assign(
@@ -69,8 +69,10 @@ private:
     }
     // ReSharper disable once CppTooWideScopeInitStatement
     uint16_t const realEtherType = ntohs(reinterpret_cast<uint16_t*>(_byteArr)[0]);
-    // TODO: 支持其他 ethtype
     if (realEtherType not_eq ETHERTYPE_IPV4) {
+#if defined(BENCHMARK)
+      global::num_consumed_packet--;
+#endif
       if (realEtherType == ETHERTYPE_IPV6) {
         hd_debug("ETHERTYPE_IPV6");
       } else

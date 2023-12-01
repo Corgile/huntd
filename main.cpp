@@ -15,10 +15,10 @@ namespace hd::global {
 hd::type::capture_option opt;
 std::string fillBit;
 #if defined(BENCHMARK)
-uint32_t num_captured_packet = 0;
-std::atomic<int32_t> num_missed_packet = 0;
+std::atomic<int32_t> num_captured_packet = 0;
+std::atomic<int32_t> num_dropped_packets = 0;
 std::atomic<int32_t> num_consumed_packet = 0;
-std::atomic<int32_t> num_processed_packet = 0;
+std::atomic<int32_t> num_written_csv = 0;
 #endif
 }
 

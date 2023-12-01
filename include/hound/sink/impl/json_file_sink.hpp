@@ -56,7 +56,7 @@ public:
       std::lock_guard<std::mutex> lock(mAccessToFlowTable);
       auto _packetList = this->mFlowTable[data.mFlowKey];
       if (_packetList.empty()) goto merge_into_existing_flow;
-      if (okToErase(_packetList, data)) {
+      if (okToRemove(_packetList, data)) {
         if (_packetList.size() >= opt.min_packets) {
           hd_flow flow{data.mFlowKey, std::move(_packetList)};
           std::string _jsonStr;
@@ -92,7 +92,7 @@ private:
     mOutFile << content;
   }
 
-  bool inline okToErase(PacketList const& list, ParsedData const& data) {
+  bool inline okToRemove(PacketList const& list, ParsedData const& data) {
     return list.back().ts_sec - data.mPcapHead.ts_sec >= global::opt.interval or
            list.size() == global::opt.max_packets;
   }

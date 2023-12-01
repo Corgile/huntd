@@ -10,7 +10,12 @@
 
 #include <hound/sink/impl/text_file_sink.hpp>
 #include <hound/sink/impl/json_file_sink.hpp>
-#include <hound/sink/impl/kafka/kafka_sink.hpp>
+
+#if defined(INCLUDE_KAFKA)
+
+  #include <hound/sink/impl/kafka/kafka_sink.hpp>
+
+#endif
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::openLiveHandle(global::opt, this->mLinkType);
@@ -23,9 +28,11 @@ hd::type::LiveParser::LiveParser() {
   } else {
     mSink.reset(new TextFileSink(global::opt.filename));
   }
+#if defined(INCLUDE_KAFKA)
   if (global::opt.send_kafka) {
     mSink.reset(new KafkaSink(global::opt.filename));
   }
+#endif
 }
 
 void hd::type::LiveParser::startCapture() {
@@ -51,7 +58,9 @@ void hd::type::LiveParser::stopCapture() const {
 
 void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
   auto const _this{reinterpret_cast<LiveParser*>(user_data)};
-  std::ignore = _this->lockFreeQueue.push({pkthdr, packet});
+  // std::ignore = _this->lockFreeQueue.push({pkthdr, packet});
+  raw_packet_info value{pkthdr, packet};
+  _this->lockFreeQueue.push(value);
 #if defined(BENCHMARK)
   global::num_captured_packet++;
 #endif //BENCHMARK
@@ -60,25 +69,28 @@ void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkt
 void hd::type::LiveParser::consumer_job() {
   /// 采用标志变量keepRunning来控制detach的线程
   while (keepRunning.load(std::memory_order_acquire)) {
-    raw_packet_info packetInfo = this->lockFreeQueue.pop();
-    if (packetInfo.info_hdr == nullptr) continue;
-    mSink->consumeData(ParsedData(packetInfo));
+    auto packetInfo = this->lockFreeQueue.pop();
+    if (not packetInfo.has_value()) continue;
+    mSink->consumeData(ParsedData(packetInfo.value()));
+#if defined(BENCHMARK)
+    global::num_consumed_packet++;
+#endif
   }
 }
 
 hd::type::LiveParser::~LiveParser() {
   /// 先等待游离worker线程消费队列直至为空
   while (not this->lockFreeQueue.empty()) {
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   /// 再控制游离线程停止访问主线程的资源
   keepRunning.store(false, std::memory_order_release);
-  hd_debug(this->lockFreeQueue.count());
 #if defined(BENCHMARK)
   using namespace global;
   hd_info_one(num_captured_packet);
-  hd_info_one(num_missed_packet);
+  hd_info_one(num_dropped_packets);
   hd_info_one(num_consumed_packet);
-  hd_info_one(num_processed_packet);
+  hd_info_one(num_written_csv);
 #endif//- #if defined(BENCHMARK)
+  hd_debug(this->lockFreeQueue.count());
 }
