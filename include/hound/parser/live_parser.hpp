@@ -24,15 +24,17 @@ public:
   ~LiveParser();
 
 private:
+
+  static void liveHandler(u_char*, const pcap_pkthdr*, const u_char*);
+
+  void consumer_job();
+
+private:
   pcap_t* mHandle{nullptr};
   uint32_t mLinkType{};
   LockFreeQueue<raw_packet_info, 8192> lockFreeQueue;
   std::atomic<bool> keepRunning{true};
   std::shared_ptr<BaseSink> mSink;
-
-  static void liveHandler(u_char*, const pcap_pkthdr*, const u_char*);
-
-  void consumer_job();
 };
 
 } // entity

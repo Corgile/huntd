@@ -8,13 +8,14 @@
 namespace hd {
 namespace type {
 struct ValueTriple {
-  uint32_t ts_sec;
-  uint32_t ts_usec;
-  uint32_t caplen;
+  __time_t ts_sec;
+  __suseconds_t ts_usec;
+  bpf_u_int32 caplen;
 
   ValueTriple() = default;
 
-  ValueTriple(uint32_t tsSec, uint32_t tsUsec, uint32_t capLen) : ts_sec(tsSec), ts_usec(tsUsec), caplen(capLen) {}
+  ValueTriple(__time_t tsSec, __suseconds_t tsUsec, bpf_u_int32 capLen)
+      : ts_sec(tsSec), ts_usec(tsUsec), caplen(capLen) {}
 };
 
 } // type

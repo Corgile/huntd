@@ -28,7 +28,7 @@ public:
 #if defined(HD_DEV)
     hd_info_one(std::move(buffer));
 #else
-    mConsole << std::move(buffer) << '\n';
+    mConsole << std::move(buffer);
 #endif
 
 #if defined(BENCHMARK)
@@ -39,15 +39,16 @@ public:
   virtual ~BaseSink() {};
 
 protected:
-  void fillCsvBuffer(ParsedData const& data, std::string& buffer) {
+  // TODO : static抽出去，也许能优化一下
+  void fillCsvBuffer(ParsedData const& data, std::string& buffer) const {
     using namespace global;
     buffer.append(data.m5Tuple).append(",");
     if (opt.caplen) buffer.append(data.mCapLen).append(",");
     if (opt.timestamp) buffer.append(data.mTimestamp).append(",");
-    this->fillRawBitVec(data, buffer);
+    fillRawBitVec(data, buffer);
   }
 
-  void fillRawBitVec(ParsedData const& data, std::string& buffer) {
+  void fillRawBitVec(ParsedData const& data, std::string& buffer) const {
     using namespace global;
     hd::core::ProcessByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIPv4Head, buffer);
     hd::core::ProcessByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);

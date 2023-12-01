@@ -11,20 +11,20 @@ class [[nodiscard]] Timer {
 public:
   Timer() = delete;
 
-  Timer(int& elapsed) : m_elapsed(elapsed) {
+  Timer(double& elapsed) : m_elapsed(elapsed) {
     m_elapsed = 0;
-    start_time = std::chrono::steady_clock::now();
+    start_time = std::chrono::high_resolution_clock::now();
   }
 
   ~Timer() {
-    elapsed_time = std::chrono::steady_clock::now() - start_time;
+    elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
     /// pass out elapsed ms before dying
-    this->m_elapsed = (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time)).count();
+    m_elapsed = elapsed_time.count() * 1000.0f;
   }
 
 private:
-  int& m_elapsed;
-  std::chrono::time_point<std::chrono::steady_clock> start_time;
+  double& m_elapsed;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
   std::chrono::duration<double> elapsed_time = std::chrono::duration<double>::zero();
 };
 

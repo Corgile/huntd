@@ -107,9 +107,10 @@ void hd::type::capture_option::print() {
   if (this->offline_mode and not pcap_file.empty()) {
     hd_info(CYAN("pcap_file = "), pcap_file);
   }
-  if (not device.empty()) {
+  if (not device.empty() and live_mode) {
     hd_info(CYAN("device   = "), device);
   }
+  hd_info(CYAN("filter   = "), filter);
 }
 
 hd::type::capture_option::~capture_option() {

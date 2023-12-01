@@ -19,6 +19,7 @@ namespace hd::type {
 namespace fs = std::filesystem;
 
 class JsonFileSink : public BaseSink {
+  using PacketList = std::vector<entity::hd_packet>;
 public:
   JsonFileSink(std::string const& fileName) :
       mOutFile(fileName, std::ios::out) {
@@ -34,7 +35,8 @@ public:
       hd_info(RED("无法打开输出文件: "), fileName);
       exit(EXIT_FAILURE);
     }
-    mOutFile << "[" << std::flush;
+    mOutFile << "[";
+    mOutFile << std::flush;
   }
 
   /// 写入json文件
@@ -52,32 +54,19 @@ public:
     };
     {
       std::lock_guard<std::mutex> lock(mAccessToFlowTable);
-      if (mFlowTable.find(data.mFlowKey) == mFlowTable.end()) {
-        mFlowTable.insert_or_assign(data.mFlowKey, std::vector<hd_packet>());
-      }
-      std::vector<hd_packet> _packetList;
-      try {
-        _packetList = this->mFlowTable.at(data.mFlowKey);
-      } catch (const std::out_of_range& e) {
-        std::cerr << "报错位置在: " << __LINE__ << std::endl;
-      }
+      auto _packetList = this->mFlowTable[data.mFlowKey];
       if (_packetList.empty()) goto merge_into_existing_flow;
-      if (_packetList.back().ts_sec - data.mPcapHead.ts_sec >= opt.interval or _packetList.size() == opt.max_packets) {
+      if (okToErase(_packetList, data)) {
         if (_packetList.size() >= opt.min_packets) {
           hd_flow flow{data.mFlowKey, std::move(_packetList)};
           std::string _jsonStr;
-          struct_json::to_json(flow, _jsonStr); // 序列化
-          hd_info(_jsonStr);
+          struct_json::to_json(flow, _jsonStr);
           this->append(_jsonStr);
         }
         mFlowTable.erase(data.mFlowKey);
       }
 merge_into_existing_flow:
-      try {
-        this->mFlowTable[data.mFlowKey].emplace_back(packet);
-      } catch (const std::out_of_range& e) {
-        std::cerr << "报错位置在: " << __LINE__ << std::endl;
-      }
+      this->mFlowTable[data.mFlowKey].emplace_back(packet);
     }
   }
 
@@ -103,10 +92,14 @@ private:
     mOutFile << content;
   }
 
+  bool inline okToErase(PacketList const& list, ParsedData const& data) {
+    return list.back().ts_sec - data.mPcapHead.ts_sec >= global::opt.interval or
+           list.size() == global::opt.max_packets;
+  }
+
 private:
   SyncedStream<std::fstream> mOutFile;
-  //! not thread safe
-  std::map<std::string, std::vector<entity::hd_packet>> mFlowTable;
+  std::map<std::string, PacketList> mFlowTable;
   std::mutex mAccessToFlowTable;
 };
 

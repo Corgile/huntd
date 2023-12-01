@@ -67,13 +67,6 @@ void hd::type::LiveParser::consumer_job() {
 }
 
 hd::type::LiveParser::~LiveParser() {
-#if defined(BENCHMARK)
-  using namespace global;
-  hd_info_one(num_captured_packet);
-  hd_info_one(num_missed_packet);
-  hd_info_one(num_consumed_packet);
-  hd_info_one(num_processed_packet);
-#endif//- #if defined(BENCHMARK)
   /// 先等待游离worker线程消费队列直至为空
   while (not this->lockFreeQueue.empty()) {
     std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -81,4 +74,11 @@ hd::type::LiveParser::~LiveParser() {
   /// 再控制游离线程停止访问主线程的资源
   keepRunning.store(false, std::memory_order_release);
   hd_debug(this->lockFreeQueue.count());
+#if defined(BENCHMARK)
+  using namespace global;
+  hd_info_one(num_captured_packet);
+  hd_info_one(num_missed_packet);
+  hd_info_one(num_consumed_packet);
+  hd_info_one(num_processed_packet);
+#endif//- #if defined(BENCHMARK)
 }

@@ -39,13 +39,17 @@ public:
   }
 
   template<typename T>
-  SyncedStream& operator<<(const T& data) {
+  // SyncedStream& operator<<(const T& data) {
+  void operator<<(const T& data) {
     std::scoped_lock<std::mutex> lock(mutex_);
-    mOutStream << data;
-    return *this;
+    mOutStream << data << '\n';
+    // 不返回*this是因为外部调用 << 时:
+    // filestream << content << other;
+    // 两个 << 调用彼此之间并不是sync的, 会发生竞争 导致unexpected b
+    // return *this;
   }
 
-  /// 特化版本处理操纵符，处理 std::endl
+  /// 特化版本处理操纵符，处理 std::endl, std::flush等
   SyncedStream& operator<<(std::ostream& (* manipulator)(std::ostream&)) {
     std::scoped_lock<std::mutex> lock(mutex_);
     manipulator(mOutStream);
