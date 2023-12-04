@@ -24,6 +24,7 @@ std::atomic<int32_t> num_written_csv = 0;
 
 int main(int argc, char* argv[]) {
   using namespace hd::global;
+  using namespace hd::type;
   hd::util::parseOptions(opt, argc, argv);
   if (opt.unsign or opt.stride == 1) opt.fill_bit |= 0;
   fillBit = std::to_string(opt.fill_bit).append(",");
@@ -54,22 +55,19 @@ int main(int argc, char* argv[]) {
   #endif
   });
 
+
 #if defined(LIVE_MODE)
-  liveParser = std::make_unique<hd::type::LiveParser>();
   if (opt.live_mode) {
-    std::thread([&]() {
-      liveParser->startCapture();
-    }).join();
+    liveParser = std::make_unique<LiveParser>();
+    liveParser->startCapture();
+    liveParser->stopCapture();
   } else
 #endif
   {
 #if defined(DEAD_MODE)
-    deadParser = std::make_unique<hd::type::DeadParser>();
+    deadParser = std::make_unique<DeadParser>();
     deadParser->processFile();
 #endif
   }
-  #if defined(INCLUDE_KAFKA)
-  std::cout << "INCLUDE_KAFKA" << std::endl;
-  #endif
   return 0;
 }

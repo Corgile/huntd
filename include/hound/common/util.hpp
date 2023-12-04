@@ -334,5 +334,10 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
     }
   }
 }
+
+template<typename T>
+static int inline min(T _a, T _b) {
+  return _a < _b ? _a : _b;
+}
 } // namespace hd::util
 #endif //HOUND_UTILS_HPP

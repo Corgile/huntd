@@ -6,25 +6,28 @@
 #define HOUND_RAW_PACKET_INFO_HPP
 
 #include <pcap/pcap.h>
-#include <c++/11/cstddef>
+#include <vector>
+#include <cstring>
+#include <hound/common/macro.hpp>
 
 namespace hd::type {
 
 using byte_t = uint8_t;
 
 struct raw_packet_info {
-  raw_packet_info(std::nullptr_t aNullptr) : info_hdr{nullptr}, byte_arr{nullptr} {}
 
-  /// don't try to release those 2 pointers
-  /// because pcap does this internally and automatically
-  pcap_pkthdr* info_hdr;
-  byte_t* byte_arr;
+  pcap_pkthdr info_hdr;
+  std::shared_ptr<byte_t> byte_arr;
 
-  raw_packet_info() = default;
+  raw_packet_info(const pcap_pkthdr* pkthdr, const byte_t* packet, int32_t len) {
+    this->info_hdr = std::move(*pkthdr);
+    this->byte_arr.reset(new byte_t[len + 1]);
+    std::memcpy(this->byte_arr.get(), packet, len);
+  }
 
-  raw_packet_info(const pcap_pkthdr* pkthdr, const byte_t* packet) {
-    this->info_hdr = const_cast<pcap_pkthdr*>(pkthdr);
-    this->byte_arr = const_cast<byte_t*>(packet);
+private:
+  int inline min(int _a, int _b) {
+    return _a < _b ? _a : _b;
   }
 };
 

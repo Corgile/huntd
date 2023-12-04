@@ -44,9 +44,9 @@ public:
 
   ParsedData(raw_packet_info const& data) {
     this->mPcapHead = {
-        data.info_hdr->ts.tv_sec,
-        data.info_hdr->ts.tv_usec,
-        data.info_hdr->caplen
+        data.info_hdr.ts.tv_sec,
+        data.info_hdr.ts.tv_usec,
+        data.info_hdr.caplen
     };
     this->mCapLen.assign(std::to_string(mPcapHead.caplen));
     this->mTimestamp.assign(
@@ -54,21 +54,18 @@ public:
             .append(",")
             .append(std::to_string(mPcapHead.ts_usec))
     );
-    this->HasContent = processRawPacket(data.byte_arr);
+    this->HasContent = processRawPacket(data.byte_arr.get());
   }
 
 private:
   [[nodiscard("do not discard")]]
-  bool processRawPacket(byte_t* _byteArr) {
+  bool processRawPacket(u_char* _byteArr) {
     // ReSharper disable once CppTooWideScopeInitStatement
-    auto const eth{reinterpret_cast<ether_header*>(_byteArr)};
+    auto eth{reinterpret_cast<ether_header*>(_byteArr)};
     if (ntohs(eth->ether_type) == ETHERTYPE_VLAN) {
-      _byteArr = &_byteArr[sizeof(ether_header) + sizeof(vlan_header)];
-    } else {
-      _byteArr = &_byteArr[sizeof(ether_header) - sizeof(uint16_t)];
+      eth = reinterpret_cast<ether_header*>(&_byteArr[sizeof(vlan_header)] );
     }
-    // ReSharper disable once CppTooWideScopeInitStatement
-    uint16_t const realEtherType = ntohs(reinterpret_cast<uint16_t*>(_byteArr)[0]);
+    auto const realEtherType = ntohs(eth->ether_type);
     if (realEtherType not_eq ETHERTYPE_IPV4) {
 #if defined(BENCHMARK)
       global::num_consumed_packet--;
@@ -79,7 +76,7 @@ private:
         hd_debug("不是 ETHERTYPE_IPV4/6");
       return false;
     }
-    return processIPv4Packet(&_byteArr[2]);
+    return processIPv4Packet(&_byteArr[sizeof(ether_header)]);
   }
 
   [[nodiscard("do not discard")]]
@@ -87,7 +84,6 @@ private:
     ip const* _ipv4 = reinterpret_cast<ip*>(_ipv4RawBytes);
     auto _ipProtocol{_ipv4->ip_p};
     if (_ipProtocol not_eq IPPROTO_UDP and _ipProtocol not_eq IPPROTO_TCP) {
-      hd_debug(_ipProtocol);
       return false;
     }
     this->mIpPair = std::minmax(_ipv4->ip_src.s_addr, _ipv4->ip_dst.s_addr);

@@ -7,11 +7,9 @@
 
 #include <pcap/pcap.h>
 #include <atomic>
-// #include <hound/type/lock_free_queue.hpp>
-#include <hound/type/lock_free_queue_v.hpp>
 #include <hound/type/raw_packet_info.hpp>
 #include <hound/sink/base_sink.hpp>
-// #include <hound/type/concurrent_queue.hpp>
+#include <condition_variable>
 
 namespace hd::type {
 
@@ -21,7 +19,7 @@ public:
 
   void startCapture();
 
-  void stopCapture() const;
+  void stopCapture();
 
   ~LiveParser();
 
@@ -31,17 +29,20 @@ private:
 
   void consumer_job();
 
-private:
+public:
 
 
 private:
   pcap_t* mHandle{nullptr};
   uint32_t mLinkType{};
-  entity::LockFreeQueue<raw_packet_info, 8192> lockFreeQueue;
-  // moodycamel::ConcurrentQueue<raw_packet_info> lockFreeQueue;
+  std::queue<raw_packet_info> mPacketQueue;
   std::atomic<bool> keepRunning{true};
+  // std::atomic<bool> mProducerFinished{false};
   std::shared_ptr<BaseSink> mSink;
+  std::condition_variable cv_producer;      // 生产者条件变量
+  std::condition_variable cv_consumer;      // 消费者条件变量
 
+  mutable std::mutex mQueueLock;
 
 };
 

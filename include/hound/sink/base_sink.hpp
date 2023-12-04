@@ -22,6 +22,7 @@ public:
   BaseSink() : mConsole(std::cout) {}
 
   virtual void consumeData(ParsedData const& data) {
+    // TODO: 异步
     if (not data.HasContent) return;
     std::string buffer;
     this->fillCsvBuffer(data, buffer);

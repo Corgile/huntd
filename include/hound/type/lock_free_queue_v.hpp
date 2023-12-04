@@ -1,5 +1,5 @@
 //
-// Created by 裴沛东 on 2022/5/14.
+// Created by brian on 2022/5/14.
 //
 
 #ifndef HOUND_LOCK_FREE_QUEUE_V
@@ -9,6 +9,7 @@
 #include <array>
 #include <optional>
 #include <mutex>
+#include <thread>
 
 #if defined(BENCHMARK)
 
@@ -28,10 +29,6 @@ public:
     size_t nextTail = (currentTail + 1) % Capacity;
     // 判断队列是否已满
     while (nextTail == head.load(std::memory_order_acquire)) {
-      // 队列已满，等待
-#if defined(BENCHMARK)
-      global::num_dropped_packets++;
-#endif
       std::this_thread::yield();
     }
 
