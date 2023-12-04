@@ -22,3 +22,4 @@ cmake -DBUILD_MODE:STRING=LIVE_MODE,DEAD_MODE,INCLUDE_KAFKA,HD_DEV,BENCHMARK ..
   - 解决方案：把packet复制出来而不是用指针
 - [x] synced_stream 只保证在调用一次 << 的情况下输出到文件的正确位置，两次函数调用可能会丢掉锁
 - [x] 回归测试 
+- [ ] 重复代码太多，思考如何重构一下
