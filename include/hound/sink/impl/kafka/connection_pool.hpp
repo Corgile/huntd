@@ -89,7 +89,7 @@ private:
   /// 非静态成员方法，其调用依赖对象，要把其设计为一个线程函数，需要绑定this指针。
   /// 把该线程函数写为类的成员方法，最大的好处是
   /// 非常方便访问当前对象的成员变量。（数据）
-  [[noreturn]] void produceConnectionTask() {
+  void produceConnectionTask() {
     while (not _finished) {
       std::unique_lock<std::mutex> lock(_queueMutex);
       cv.wait(lock, [&] {
@@ -110,7 +110,7 @@ private:
   }
 
   /// 扫描超过maxIdleTime时间的空闲连接，进行对于连接的回收
-  [[noreturn]] void scannerConnectionTask() {
+  void scannerConnectionTask() {
     while (not _finished) {
       // 通过sleep实现定时
       std::this_thread::sleep_for(std::chrono::seconds(_config.conn.max_idle));
