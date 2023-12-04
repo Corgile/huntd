@@ -19,20 +19,21 @@
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::openLiveHandle(global::opt, this->mLinkType);
-  if (global::opt.filename.empty()) {
-    mSink.reset(new BaseSink(global::opt.filename));
-    return;
-  }
-  if (global::opt.filename.ends_with(".json")) {
-    mSink.reset(new JsonFileSink(global::opt.filename));
-  } else {
-    mSink.reset(new TextFileSink(global::opt.filename));
-  }
 #if defined(INCLUDE_KAFKA)
   if (global::opt.send_kafka) {
-    mSink.reset(new KafkaSink(global::opt.filename));
+    mSink.reset(new KafkaSink(global::opt.kafka_config));
+    return;
   }
 #endif
+  if (global::opt.output_file.empty()) {
+    mSink.reset(new BaseSink(global::opt.output_file));
+    return;
+  }
+  if (global::opt.output_file.ends_with(".json")) {
+    mSink.reset(new JsonFileSink(global::opt.output_file));
+  } else {
+    mSink.reset(new TextFileSink(global::opt.output_file));
+  }
 }
 
 void hd::type::LiveParser::startCapture() {

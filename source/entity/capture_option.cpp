@@ -37,7 +37,7 @@ hd::type::capture_option::capture_option() {
   this->stride = 8;
   this->output_index = 4;
   this->kafka_config = {};
-  this->filename = {};
+  this->output_file = {};
   this->filter = {};
   this->device = {};
 
@@ -101,8 +101,8 @@ void hd::type::capture_option::print() {
   if (send_kafka and not kafka_config.empty()) {
     hd_info(CYAN("config   = "), kafka_config);
   }
-  if (this->write_file and not filename.empty()) {
-    hd_info(CYAN("output   = "), filename);
+  if (this->write_file and not output_file.empty()) {
+    hd_info(CYAN("output   = "), output_file);
   }
   if (this->offline_mode and not pcap_file.empty()) {
     hd_info(CYAN("pcap_file = "), pcap_file);

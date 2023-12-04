@@ -37,7 +37,7 @@ struct capture_option {
   std::string filter;
   /// mode
   bool write_file;
-  std::string filename;
+  std::string output_file;
   bool send_kafka;
   std::string kafka_config;
   bool offline_mode;

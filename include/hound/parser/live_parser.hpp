@@ -37,7 +37,6 @@ private:
   uint32_t mLinkType{};
   std::queue<raw_packet_info> mPacketQueue;
   std::atomic<bool> keepRunning{true};
-  // std::atomic<bool> mProducerFinished{false};
   std::shared_ptr<BaseSink> mSink;
   std::condition_variable cv_producer;      // 生产者条件变量
   std::condition_variable cv_consumer;      // 消费者条件变量

@@ -38,7 +38,7 @@ static option longopts[] = {
 			{"max",         required_argument, nullptr, 'R'},
 			/// threshold seconds(to determine whether to send)
 			{"interval",    required_argument, nullptr, 'E'},
-			{"kafka-conf",  required_argument, nullptr, 'K'},
+			{"kafka",       required_argument, nullptr, 'K'},
 			/// pcap file path, required when processing a pcapng file.
 			{"pcap-file",   required_argument, nullptr, 'P'},
 			/// num of bits to convert as an integer
@@ -275,8 +275,8 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
         break;
       case 'W':
         arguments.write_file = true;
-        arguments.filename = optarg;
-        if (optarg == nullptr or arguments.filename.empty()) {
+        arguments.output_file = optarg;
+        if (optarg == nullptr or arguments.output_file.empty()) {
           hd_info("-W, --write 缺少值");
           exit(EXIT_FAILURE);
         }

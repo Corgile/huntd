@@ -58,10 +58,12 @@ public:
       if (_packetList.empty()) goto merge_into_existing_flow;
       if (okToRemove(_packetList, data)) {
         if (_packetList.size() >= opt.min_packets) {
-          hd_flow flow{data.mFlowKey, std::move(_packetList)};
-          std::string _jsonStr;
-          struct_json::to_json(flow, _jsonStr);
-          this->append(_jsonStr);
+          this->append({
+                           data.mFlowKey,
+                           (int) _packetList.size(),
+                           std::move(_packetList)
+                       }
+          );
         }
         mFlowTable.erase(data.mFlowKey);
       }
@@ -71,30 +73,40 @@ merge_into_existing_flow:
   }
 
   ~JsonFileSink() {
+    for (auto& [id, _list]: this->mFlowTable) {
+      if (_list.size() >= global::opt.min_packets) {
+        this->append({id, (int) _list.size(), std::move(_list)});
+      }
+      mFlowTable.erase(id);
+    }
     std::streampos currentPosition = mOutFile.SyncInvoke(
-        [](std::fstream& stream) {
-          return stream.tellg();
-        }
+        [](std::fstream& stream) { return stream.tellg(); }
     );
     if (currentPosition > 0) {
       mOutFile.SyncInvoke(
           [&](std::fstream& stream) {
-            stream.seekg(currentPosition.operator-(1));
+            /// Subtract 2 here because there are ',' and '\\n' at the end.
+            stream.seekg(currentPosition.operator-(2));
           }
       );
       mOutFile << "]";
     }
+    hd_debug(mFlowTable.size());
   }
 
-private:
-  void append(std::string& content) {
+protected:
+  void append(const entity::hd_flow& flow) {
+    std::string content;
+    struct_json::to_json(flow, content);
     content.append(",");
     mOutFile << content;
   }
 
+private:
   bool inline okToRemove(PacketList const& list, ParsedData const& data) {
-    return list.back().ts_sec - data.mPcapHead.ts_sec >= global::opt.interval or
-           list.size() == global::opt.max_packets;
+    using namespace global;
+    return data.mPcapHead.ts_sec - list.back().ts_sec >= opt.interval
+           or list.size() >= opt.max_packets;
   }
 
 private:

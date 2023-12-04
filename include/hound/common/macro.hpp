@@ -95,9 +95,9 @@ static void printL(T... args) {
 /// 仅在开发阶段作为调试使用
 #if not defined(hd_debug)
 #if defined(HD_DEV)
-#define hd_debug(x)  dbg(x)
+#define hd_debug  dbg
 #else//- not HD_DEV
-		#define hd_debug(x)
+		#define hd_debug(...)
 #endif
 #endif//- hd_debug
 

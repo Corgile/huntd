@@ -15,14 +15,14 @@
 
 hd::type::DeadParser::DeadParser() {
   this->mHandle = util::openDeadHandle(global::opt, this->mLinkType);
-  if (global::opt.filename.empty()) {
-    mSink.reset(new BaseSink(global::opt.filename));
+  if (global::opt.output_file.empty()) {
+    mSink.reset(new BaseSink(global::opt.output_file));
     return;
   }
-  if (global::opt.filename.ends_with(".json")) {
-    mSink.reset(new JsonFileSink(global::opt.filename));
+  if (global::opt.output_file.ends_with(".json")) {
+    mSink.reset(new JsonFileSink(global::opt.output_file));
   } else {
-    mSink.reset(new TextFileSink(global::opt.filename));
+    mSink.reset(new TextFileSink(global::opt.output_file));
   }
 }
 
@@ -52,17 +52,16 @@ void hd::type::DeadParser::consumer_job() {
   /// 采用标志变量keepRunning来控制detach的线程
   while (keepRunning) {
     std::unique_lock<std::mutex> lock(this->mQueueLock);
-    while (keepRunning and this->mPacketQueue.empty()) {
-      cv_consumer.wait(lock);
-    }
-    // this->cv_consumer.wait(lock, [this] {
-    //   return not keepRunning and this->mPacketQueue.size() > 0;
-    // });
+    this->cv_consumer.wait(lock, [this] {
+      return not this->mPacketQueue.empty() or not keepRunning;
+    });
+    if (not keepRunning) break;
+    if (this->mPacketQueue.empty()) continue;
     raw_packet_info packetInfo{this->mPacketQueue.front()};
     this->mPacketQueue.pop();
     lock.unlock();
     cv_producer.notify_one();
-    mSink->consumeData({std::move(packetInfo)});
+    mSink->consumeData({packetInfo});
 #if defined(BENCHMARK)
     global::num_consumed_packet++;
 #endif
