@@ -16,40 +16,8 @@ using PacketList = std::vector<entity::hd_packet>;
 class KafkaSink : public BaseSink {
 public:
   KafkaSink(std::string const& fileName) {
-    std::ifstream config_file(fileName);
-    if (not config_file.is_open()) {
-      hd_info(RED("无法打开配置文件: "), fileName);
-      exit(EXIT_FAILURE);
-    }
-    std::string line;
-    while (getline(config_file, line)) {
-      if (line.empty() or line[0] == '#') {
-        continue;
-      }
-      size_t pos{line.find('=')};
-      if (pos == std::string::npos) {
-        hd_info(RED("配置项格式错误: "), line);
-        exit(EXIT_FAILURE);
-      }
-      auto key{line.substr(0, pos)};
-      auto value{line.substr(pos + 1)};
-      if (value.empty()) continue;
-      this->config[key] = value;
-      hd_info(BLUE("加载配置: "), key, "=", value);
-    }
-    hd::entity::kafka_config kafkaConfig = {
-        .conn = {
-            .servers = config.find(hd::keys::KAFKA_BROKERS)->second,
-            .topics = config[hd::keys::KAFKA_TOPICS],
-            .partition = 0,
-            .max_idle = 200,
-            .timeout_sec = 1200,
-        },
-        .pool = {
-            .init_size = 10,
-            .max_size = 100,
-        }
-    };
+    hd::entity::kafka_config kafkaConfig;
+    loadKafkaConfig(kafkaConfig, fileName);
     this->mConnectionPool = hd::entity::connection_pool::create(kafkaConfig);
   }
 
@@ -93,7 +61,8 @@ merge_into_existing_flow:
   void send(const entity::hd_flow& flow) {
     std::string payload;
     struct_json::to_json(flow, payload);
-    this->mConnectionPool->get_connection()->pushMessage(payload, flow.flowId);
+    auto connection = this->mConnectionPool->get_connection();
+    connection->pushMessage(payload, flow.flowId);
   }
 
 private:
@@ -103,10 +72,28 @@ private:
            or list.size() >= opt.max_packets;
   }
 
+  void loadKafkaConfig(hd::entity::kafka_config& config, std::string const& fileName) {
+    std::ifstream config_file(fileName);
+    std::string line;
+    if (not config_file.is_open()) {
+      hd_info(RED("无法打开配置文件: "), fileName);
+      exit(EXIT_FAILURE);
+    }
+    while (getline(config_file, line)) {
+      size_t pos{line.find('=')};
+      if (pos == std::string::npos or line[0] == '#')
+        continue;
+      auto value{line.substr(pos + 1)};
+      if (value.empty()) continue;
+      auto key{line.substr(0, pos)};
+      config.put(key, value);
+      hd_info(BLUE("加载配置: "), key, "=", value);
+    }
+  }
+
 private:
   std::map<std::string, PacketList> mFlowTable;
   std::mutex mAccessToFlowTable;
-  std::unordered_map<std::string, std::string> config;
   hd::entity::connection_pool* mConnectionPool;
 };
 

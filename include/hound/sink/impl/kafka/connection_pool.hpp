@@ -33,7 +33,7 @@ public:
   std::shared_ptr<hd::entity::kafka_connection> get_connection() {
     std::unique_lock<std::mutex> lock(_queueMutex);
     cv.wait_for(lock, std::chrono::seconds(_config.conn.timeout_sec),
-                [&]() { return !_connectionQue.empty(); });
+                [&]() { return not _connectionQue.empty(); });
     if (_connectionQue.empty()) {
       std::printf("%s", "获取连接失败，等待空闲连接超时.\n");
       return nullptr;
@@ -71,7 +71,7 @@ public:
 
 private:
   /// 单例模式——构造函数私有化
-  explicit connection_pool(const hd::entity::kafka_config& kafkaConfig) {
+  connection_pool(const hd::entity::kafka_config& kafkaConfig) {
     /// 初始化kafka参数
     this->_config = kafkaConfig;
     /// 创建初始数量的连接
@@ -115,8 +115,8 @@ private:
       // 通过sleep实现定时
       std::this_thread::sleep_for(std::chrono::seconds(_config.conn.max_idle));
       // 扫描整个队列，释放多余的连接
-      std::unique_lock<std::mutex> lock(_queueMutex);
       if (_finished) break;
+      std::unique_lock<std::mutex> lock(_queueMutex);
       while (_connectionCnt > _config.pool.init_size) {
         auto connection = _connectionQue.front();
         if (connection->getAliveTime() >= (_config.conn.max_idle * 1000)) {
