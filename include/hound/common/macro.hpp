@@ -88,7 +88,7 @@ static void printL(T... args) {
 #if defined(HD_DEV)
 #define hd_info_one(x)  dbg(x)
 #else
-		#define hd_info_one(x)  std::cout << x << "\n";
+		#define hd_info_one(x)  std::cout << CYAN(#x) " = " << x << "\n"
 #endif
 #endif//-hd_info_one
 

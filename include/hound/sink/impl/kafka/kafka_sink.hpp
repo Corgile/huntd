@@ -23,6 +23,7 @@ public:
 
   ~KafkaSink() override {
     delete mConnectionPool;
+    hd_debug(__PRETTY_FUNCTION__);
   }
 
   /// 写入发送到kafka

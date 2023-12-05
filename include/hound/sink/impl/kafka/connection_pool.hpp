@@ -67,6 +67,7 @@ public:
       _connectionQue.pop();
       delete conn;
     }
+    hd_debug(__PRETTY_FUNCTION__);
   }
 
 private:
@@ -113,7 +114,10 @@ private:
   void scannerConnectionTask() {
     while (not _finished) {
       // 通过sleep实现定时
-      std::this_thread::sleep_for(std::chrono::seconds(_config.conn.max_idle));
+      for (int i = 0; i < _config.conn.max_idle; ++i) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (_finished) break;
+      }
       // 扫描整个队列，释放多余的连接
       if (_finished) break;
       std::unique_lock<std::mutex> lock(_queueMutex);
