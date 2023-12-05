@@ -34,15 +34,15 @@ int main(int argc, char* argv[]) {
 #if defined(DEAD_MODE)
   static std::unique_ptr<hd::type::DeadParser> deadParser{nullptr};
 #endif
-  std::signal(SIGINT | SIGTERM | SIGKILL | SIGSEGV, [](int signal) {
+  auto handler = [](int signal) {
     if (signal == SIGINT) {
-      hd_info("\n\033[31;1m[Ctrl-C] \033[0m received. 即将退出...");
+      hd_info(RED("\n[CtrlC] received. 即将退出..."));
     }
     if (signal == SIGTERM) {
-      hd_info("\n\033[31;1m[SIGTERM] \033[0m received. 即将退出...");
+      hd_info(RED("\n[SIGTERM] received. 即将退出..."));
     }
     if (signal == SIGKILL) {
-      hd_info("\n\033[31;1m[SIGKILL] \033[0m received. 即将退出...");
+      hd_info(RED("\n[SIGKILL] received. 即将退出..."));
     }
     if (signal == SIGSEGV) {
       hd_info(RED("发生了一个段错误: Invalid access to storage."));
@@ -53,9 +53,12 @@ int main(int argc, char* argv[]) {
   #if defined(DEAD_MODE)
     // deadParser->stopProcess();
   #endif
-  });
-
-
+  };
+  std::signal(SIGSTOP, handler);
+  std::signal(SIGINT, handler);
+  std::signal(SIGTERM, handler);
+  std::signal(SIGKILL, handler);
+  std::signal(SIGSEGV, handler);
 #if defined(LIVE_MODE)
   if (opt.live_mode) {
     liveParser = std::make_unique<LiveParser>();
