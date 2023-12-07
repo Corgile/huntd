@@ -94,7 +94,10 @@ public:
 
   ~kafka_connection() {
     while (m_connection->outq_len() > 0) {
-      hd_info(std::this_thread::get_id(), RED(" Waiting for "), m_connection->outq_len());
+      hd_info(YELLOW("Connection "),
+              std::this_thread::get_id(),
+              RED(" Waiting for queue len: "),
+              m_connection->outq_len());
       m_connection->flush(1000);
     }
     delete m_kafka_conf;
@@ -104,7 +107,6 @@ public:
     delete m_dr_cb;
     delete m_event_cb;
     delete m_partitioner_cb;
-    hd_debug(__PRETTY_FUNCTION__);
   }
 
   // 刷新连接的起始空闲时刻

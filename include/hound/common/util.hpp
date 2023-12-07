@@ -65,7 +65,7 @@ static option longopts[] = {
 			{nullptr, 0,                       nullptr, 0}};
 #pragma endregion ShortAndLongOptions //@formatter:on
 
-static void buildFilter(capture_option& opt) {
+static void BuildFilter(capture_option& opt) {
   bool config_filter_set{false};
   if (not opt.filter.empty()) {
     opt.filter.append(" and");
@@ -98,12 +98,7 @@ static void buildFilter(capture_option& opt) {
   }
 }
 
-static bool endsWith(const std::string& str, const std::string& suffix) {
-  if (suffix.length() > str.length()) return false;
-  return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-}
-
-static void setFilter(pcap_t* handle, std::string& device) {
+static void SetFilter(pcap_t* handle, std::string& device) {
   if (opt.filter.empty() or handle == nullptr) { return; }
   bpf_u_int32 net{0}, mask{0};
   bpf_program fp{};
@@ -126,7 +121,7 @@ static void setFilter(pcap_t* handle, std::string& device) {
   }
 }
 
-static pcap_t* openLiveHandle(capture_option& option, uint32_t& link_type) {
+static pcap_t* OpenLiveHandle(capture_option & option, uint32_t & link_type) {
   /* getFlowId device */
   if (option.device.empty()) {
     pcap_if_t* l;
@@ -146,14 +141,14 @@ static pcap_t* openLiveHandle(capture_option& option, uint32_t& link_type) {
     exit(EXIT_FAILURE);
   }
   /// apply filter
-  buildFilter(option);
-  setFilter(handle, option.device);
+  BuildFilter(option);
+  SetFilter(handle, option.device);
   // link_type = pcap_datalink(handle);
   // hd_debug(link_type);
   return handle;
 }
 
-static pcap_t* openDeadHandle(capture_option& option, uint32_t& link_type) {
+static pcap_t* OpenDeadHandle(capture_option & option, uint32_t & link_type) {
   //using offline = pcap_t* (*)(const char*, u_int, char*);
   using offline = pcap_t* (*)(const char*, char*);
   //offline open_offline{pcap_open_offline_with_tstamp_precision};
@@ -164,13 +159,13 @@ static pcap_t* openDeadHandle(capture_option& option, uint32_t& link_type) {
   }
   //auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
   auto const handle{open_offline(option.pcap_file.c_str(), ByteBuffer)};
-  buildFilter(option);
-  setFilter(handle, option.device);
+  BuildFilter(option);
+  SetFilter(handle, option.device);
   link_type = pcap_datalink(handle);
   return handle;
 }
 
-static void show_help() {
+static void Doc() {
   std::cout << "\n\t选项: [d:D:F:N:L:R:E:K:P:S:I:W:p:re4ui6whTt]\n\n";
   std::cout
       << "\t-d, --device         哪一个网卡\n"
@@ -205,7 +200,7 @@ static void show_help() {
       << std::endl;
 }
 
-static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
+static void ParseOptions(capture_option & arguments, int argc, char* argv[]) {
   int longind = 0, option, j;
   opterr = 0;
   while ((option = getopt_long(argc, argv, shortopts, longopts, &longind)) not_eq -1) {
@@ -271,7 +266,7 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
         arguments.max_packets = std::stoi(optarg);
         break;
       case 'E':
-        arguments.interval = std::stoi(optarg);
+        arguments.packetTimeout = std::stoi(optarg);
         break;
       case 'W':
         arguments.write_file = true;
@@ -312,7 +307,7 @@ static void parseOptions(capture_option& arguments, int argc, char* argv[]) {
         arguments.include_wlan = true;
         break;
       case 'h':
-        hd::util::show_help();
+        hd::util::Doc();
         exit(EXIT_SUCCESS);
       case 't':
         arguments.include_tcp = true;

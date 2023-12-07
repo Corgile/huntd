@@ -30,7 +30,7 @@ struct capture_option {
   int32_t num_packets;
   int32_t min_packets;
   int32_t max_packets;
-  int32_t interval;
+  int32_t packetTimeout;
   int32_t stride;
   int32_t workers{1};
   std::string device;

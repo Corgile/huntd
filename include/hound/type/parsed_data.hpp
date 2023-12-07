@@ -34,7 +34,7 @@ struct ParsedData {
 
   std::string mTimestamp, mCapLen;
   ByteArray mIPv4Head, mTcpHead, mUdpHead, mPayload;
-  ValueTriple mPcapHead;
+  PcapHeader mPcapHead;
 public:
   bool HasContent{true};
 

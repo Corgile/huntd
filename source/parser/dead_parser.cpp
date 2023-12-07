@@ -14,7 +14,7 @@
   #endif
 
 hd::type::DeadParser::DeadParser() {
-  this->mHandle = util::openDeadHandle(global::opt, this->mLinkType);
+  this->mHandle = util::OpenDeadHandle(global::opt, this->mLinkType);
   if (global::opt.output_file.empty()) {
     mSink.reset(new BaseSink(global::opt.output_file));
     return;

@@ -6,33 +6,33 @@
 #include <hound/parser/live_parser.hpp>
 #include <hound/common/global.hpp>
 #include <hound/common/util.hpp>
-#include <hound/common/macro.hpp>
 
 #include <hound/sink/impl/text_file_sink.hpp>
 #include <hound/sink/impl/json_file_sink.hpp>
 
 #if defined(INCLUDE_KAFKA)
 
-  #include <hound/sink/impl/kafka/kafka_sink.hpp>
+#include <hound/sink/impl/kafka/kafka_sink.hpp>
 
 #endif
 
 hd::type::LiveParser::LiveParser() {
-  this->mHandle = util::openLiveHandle(global::opt, this->mLinkType);
+  this->mHandle = util::OpenLiveHandle(opt, this->mLinkType);
 #if defined(INCLUDE_KAFKA)
-  if (global::opt.send_kafka) {
-    mSink.reset(new KafkaSink(global::opt.kafka_config));
+  if (opt.send_kafka) {
+    mSink.reset(new KafkaSink(opt.kafka_config));
     return;
   }
 #endif
-  if (global::opt.output_file.empty()) {
-    mSink.reset(new BaseSink(global::opt.output_file));
+  if (opt.output_file.empty()) {
+    mSink.reset(new BaseSink(opt.output_file));
     return;
   }
-  if (global::opt.output_file.ends_with(".json")) {
-    mSink.reset(new JsonFileSink(global::opt.output_file));
-  } else {
-    mSink.reset(new TextFileSink(global::opt.output_file));
+  if (opt.output_file.ends_with(".json")) {
+    mSink.reset(new JsonFileSink(opt.output_file));
+  }
+  else {
+    mSink.reset(new TextFileSink(opt.output_file));
   }
 }
 
@@ -55,11 +55,11 @@ void hd::type::LiveParser::startCapture() {
 void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
   auto const _this{reinterpret_cast<LiveParser*>(user_data)};
   std::unique_lock<std::mutex> _accessToQueue(_this->mQueueLock);
-  _this->mPacketQueue.emplace(pkthdr, packet, util::min(global::opt.payload_len + 120, (int) pkthdr->caplen));
+  _this->mPacketQueue.emplace(pkthdr, packet, util::min(opt.payload_len + 120, static_cast<int>(pkthdr->caplen)));
   _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
 #if defined(BENCHMARK)
-  global::num_captured_packet++;
+  ++num_captured_packet;
 #endif //BENCHMARK
 }
 
@@ -78,7 +78,7 @@ void hd::type::LiveParser::consumer_job() {
     cv_producer.notify_one();
     mSink->consumeData({front});
 #if defined(BENCHMARK)
-    global::num_consumed_packet++;
+    ++num_consumed_packet;
 #endif
   }
   hd_info("Worker [", std::this_thread::get_id(), "] 退出");

@@ -32,7 +32,7 @@ hd::type::capture_option::capture_option() {
   this->fill_bit = 0;
   this->min_packets = 5;
   this->max_packets = 100;
-  this->interval = 20;
+  this->packetTimeout = 20;
   this->duration = 0;
   this->stride = 8;
   this->output_index = 4;
@@ -83,6 +83,7 @@ void hd::type::capture_option::print() {
   }
   hd_info(CYAN("stride   = "), stride);
   hd_info(CYAN("fill_bit = "), fill_bit);
+  hd_info(CYAN("collTimeout = "), packetTimeout);
   if (unsign)
     hd_info(CYAN("unsigned = "), "true");
   else

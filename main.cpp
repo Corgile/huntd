@@ -4,7 +4,6 @@
 
 //@formatter:off
 #if defined(LIVE_MODE)
-  #include <thread>
   #include <hound/parser/live_parser.hpp>
 #endif
 #if defined(DEAD_MODE)
@@ -25,7 +24,7 @@ std::atomic<int32_t> num_written_csv = 0;
 int main(int argc, char* argv[]) {
   using namespace hd::global;
   using namespace hd::type;
-  hd::util::parseOptions(opt, argc, argv);
+  hd::util::ParseOptions(opt, argc, argv);
   if (opt.unsign or opt.stride == 1) opt.fill_bit |= 0;
   fillBit = std::to_string(opt.fill_bit).append(",");
 #if defined(LIVE_MODE)
@@ -44,9 +43,10 @@ int main(int argc, char* argv[]) {
     if (signal == SIGKILL) {
       hd_info(RED("\n[SIGKILL] received. 即将退出..."));
     }
-    if (signal == SIGSEGV) {
-      hd_info(RED("发生了一个段错误: Invalid access to storage."));
-    }
+    // if (signal == SIGSEGV) {
+    //   hd_info(RED("发生了一个段错误: Invalid access to storage."));
+    //   exit(EXIT_FAILURE);
+    // }
   #if defined(LIVE_MODE)
     liveParser->stopCapture();
   #endif
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   std::signal(SIGINT, handler);
   std::signal(SIGTERM, handler);
   std::signal(SIGKILL, handler);
-  std::signal(SIGSEGV, handler);
+  // std::signal(SIGSEGV, handler);
 #if defined(LIVE_MODE)
   if (opt.live_mode) {
     liveParser = std::make_unique<LiveParser>();

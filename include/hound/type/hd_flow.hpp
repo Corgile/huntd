@@ -17,15 +17,31 @@ struct hd_packet {
   __suseconds_t ts_usec;
   bpf_u_int32 packet_len;
   std::string bitvec;
+
+  hd_packet() = default;
+
+  hd_packet(const type::PcapHeader& _pcapHead) {
+    ts_sec = _pcapHead.ts_sec;
+    ts_usec = _pcapHead.ts_usec;
+    packet_len = _pcapHead.caplen;
+  }
 };
+
 REFLECTION(hd_packet, ts_usec, ts_sec, packet_len, bitvec)
 
 struct hd_flow {
-  //! TODO 优化点
   std::string flowId;
   int32_t count;
   std::vector<hd_packet> data;
+  hd_flow(std::string flowId, std::vector<hd_packet> _data)
+      : flowId(std::move(flowId)),
+        data(std::move(_data)) {
+    count = data.size();
+  }
+
+  hd_flow() = default;
 };
+
 REFLECTION(hd_flow, flowId, count, data)
 } // entity
 

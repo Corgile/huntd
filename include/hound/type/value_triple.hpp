@@ -7,14 +7,14 @@
 
 namespace hd {
 namespace type {
-struct ValueTriple {
+struct PcapHeader {
   __time_t ts_sec;
   __suseconds_t ts_usec;
   bpf_u_int32 caplen;
 
-  ValueTriple() = default;
+  PcapHeader() = default;
 
-  ValueTriple(__time_t tsSec, __suseconds_t tsUsec, bpf_u_int32 capLen)
+  PcapHeader(__time_t tsSec, __suseconds_t tsUsec, bpf_u_int32 capLen)
       : ts_sec(tsSec), ts_usec(tsUsec), caplen(capLen) {}
 };
 
