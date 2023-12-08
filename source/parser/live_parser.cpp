@@ -81,7 +81,7 @@ void hd::type::LiveParser::consumer_job() {
     ++num_consumed_packet;
 #endif//defined(BENCHMARK)
   }
-  hd_line("Worker [", std::this_thread::get_id(), "] 退出");
+  hd_line(YELLOW("Worker ["), std::this_thread::get_id(), YELLOW("] 退出"));
 }
 
 void hd::type::LiveParser::stopCapture() {

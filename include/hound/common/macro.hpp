@@ -9,50 +9,22 @@
 #include <iostream>
 
 namespace hd::macro {
+static std::mutex coutMutex;
+
 template <typename ...T>
 static void printL(T ...args) {
+  std::lock_guard lock(coutMutex);
   ((std::cout << args), ...);
 }
 } // namespace hd::macro
 
 #pragma region 常量宏
-
-#ifndef CONSOLE
-/// print to console
-#define CONSOLE	 0x1
-#endif//CONSOLE
-
-#ifndef TEXT_FILE
-/// write to csv/ascii text file
-#define TEXT_FILE	 0x2
-#endif//TEXT_FILE
-
-#ifndef JSON_FILE
-/// write to json file
-#define JSON_FILE	 0x4
-#endif//JSON_FILE
-
-#ifndef MSG_QUEUE
-/// send to some message queue (kafka)
-#define MSG_QUEUE	 0x8
-#endif//MSG_QUEUE
-
-#ifndef SILENT
-/// silent
-#define SILENT	 -1
-#endif//SILENT
-
-#ifndef IP4_PADSIZE
+#ifndef XXX_PADSIZE
 #define IP4_PADSIZE  60
-#endif//IP4_PADSIZE
-
-#ifndef TCP_PADSIZE
 #define TCP_PADSIZE  60
-#endif//TCP_PADSIZE
-
-#ifndef UDP_PADSIZE
 #define UDP_PADSIZE  8
-#endif//UDP_PADSIZE
+#define XXX_PADSIZE
+#endif// XXX_PADSIZE
 #pragma endregion 常量宏
 
 #pragma region 功能性宏
@@ -86,7 +58,7 @@ hd::macro::printL(__VA_ARGS__, "\n"); \
 #if defined(HD_DEV)
 #define hd_debug(...)  dbg(__VA_ARGS__)
 #else//- not HD_DEV
-		#define hd_debug(...)
+#define hd_debug(...)
 #endif
 #endif//- hd_debug
 

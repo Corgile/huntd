@@ -10,54 +10,54 @@
 
 namespace hd::type {
 struct capture_option final {
-  explicit capture_option();
+  explicit capture_option() = default;
 
   /// proto filter
-  bool include_radiotap;
-  bool include_wlan;
-  bool include_eth;
-  bool include_ip4;
-  bool include_ipv6;
-  bool include_tcp;
-  bool include_udp;
-  bool include_icmp;
-  bool include_vlan;
+  bool include_radiotap{false};
+  bool include_wlan{false};
+  bool include_eth{false};
+  bool include_ip4{true};
+  bool include_ipv6{false};
+  bool include_tcp{true};
+  bool include_udp{true};
+  bool include_icmp{false};
+  bool include_vlan{false};
   /// config
-  int32_t payload;
-  int32_t num_packets;
-  int32_t packetTimeout;
-  bool timestamp;
-  bool verbose;
-  bool unsign;
-  bool caplen;
-  int32_t fill_bit;
+  int32_t payload{20};
+  int32_t num_packets{-1};
+  int32_t packetTimeout{20};
+  bool timestamp{false};
+  bool verbose{true};
+  bool unsign{true};
+  bool caplen{true};
+  int32_t fill_bit{0};
 
-  int32_t stride;
+  int32_t stride{8};
   int32_t workers{1};
-  std::string device;
-  std::string filter;
+  std::string device{};
+  std::string filter{};
 
 #if defined(INCLUDE_KAFKA) || defined(LIVE_MODE)
-  int32_t duration;
+  int32_t duration{10};
 #endif
 
 #ifdef INCLUDE_KAFKA
-  bool send_kafka;
-  std::string kafka_config;
-  int32_t min_packets;
-  int32_t max_packets;
+  bool send_kafka{false};
+  std::string kafka_config{};
+  int32_t min_packets{10};
+  int32_t max_packets{100};
 #endif
 
 #ifdef DEAD_MODE
   /// mode
-  bool write_file;
-  std::string output_file;
-  bool offline_mode;
-  std::string pcap_file;
+  bool write_file{false};
+  std::string output_file{};
+  bool offline_mode{false};
+  std::string pcap_file{};
 #endif
 
 #ifdef LIVE_MODE
-  bool live_mode;
+  bool live_mode{true};
 #endif
 
 public:
