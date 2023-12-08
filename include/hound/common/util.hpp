@@ -9,11 +9,13 @@
 #include <getopt.h>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <string>
+#include <hound/common/macro.hpp>
 #include <hound/common/global.hpp>
 #include <hound/type/capture_option.hpp>
 #include <hound/type/parsed_data.hpp>
+
+#include "macro.hpp"
 
 namespace hd::util {
 namespace fs = std::filesystem;
@@ -22,7 +24,7 @@ using namespace hd::type;
 inline char ByteBuffer[PCAP_ERRBUF_SIZE];
 
 #pragma region ShortAndLongOptions
-static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:I:p:Cre4ui6whTtVU";
+static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:p:Cre4ui6whTtVU";
 static option longopts[] = {
     /// specify which network interface to capture @formatter:off
 			{"device",      required_argument, nullptr, 'd'},
@@ -44,7 +46,7 @@ static option longopts[] = {
 			/// num of bits to convert as an integer
 			{"stride",      required_argument, nullptr, 'S'},
 			/// specify one of 0~5 integer as your flowId
-			{"index",       required_argument, nullptr, 'I'},
+			/// {"index",       required_argument, nullptr, 'I'},
 			/// dump output into a csv_path file
 			{"write",       required_argument, nullptr, 'W'},
 			{"payload",     required_argument, nullptr, 'p'},
@@ -69,7 +71,8 @@ static void BuildFilter(capture_option& opt) {
   bool config_filter_set{false};
   if (not opt.filter.empty()) {
     opt.filter.append(" and");
-  } else { opt.include_ip4 = true; }
+  }
+  else { opt.include_ip4 = true; }
 
   if (opt.include_tcp or opt.include_udp or opt.include_icmp or opt.include_vlan) {
     opt.filter.append("(");
@@ -105,29 +108,29 @@ static void SetFilter(pcap_t* handle, std::string& device) {
 
   if (opt.live_mode and not device.empty()) {
     if (pcap_lookupnet(device.c_str(), &net, &mask, ByteBuffer) == -1) {
-      hd_info("获取设备掩码失败: ", device, ByteBuffer);
+      hd_line("获取设备掩码失败: ", device, ByteBuffer);
       exit(EXIT_FAILURE);
     }
   }
   hd_debug(opt.filter);
   if (pcap_compile(handle, &fp, opt.filter.c_str(), 0, net) == -1) {
-    hd_info("解析 Filter 失败: ", pcap_geterr(handle));
+    hd_line("解析 Filter 失败: ", pcap_geterr(handle));
     exit(EXIT_FAILURE);
   }
 
   if (pcap_setfilter(handle, &fp) == -1) {
-    hd_info("设置 Filter 失败: ", pcap_geterr(handle));
+    hd_line("设置 Filter 失败: ", pcap_geterr(handle));
     exit(EXIT_FAILURE);
   }
 }
 
-static pcap_t* OpenLiveHandle(capture_option & option, uint32_t & link_type) {
+static pcap_t* OpenLiveHandle(capture_option& option) {
   /* getFlowId device */
   if (option.device.empty()) {
     pcap_if_t* l;
-    int32_t rv{pcap_findalldevs(&l, hd::util::ByteBuffer)};
+    int32_t const rv{pcap_findalldevs(&l, ByteBuffer)};
     if (rv == -1) {
-      hd_info("找不到默认网卡设备", hd::util::ByteBuffer);
+      hd_line("找不到默认网卡设备", ByteBuffer);
       exit(EXIT_FAILURE);
     }
     option.device = l->name;
@@ -137,7 +140,7 @@ static pcap_t* OpenLiveHandle(capture_option & option, uint32_t & link_type) {
   /* open device */
   auto const handle{pcap_open_live(option.device.c_str(), BUFSIZ, 1, 1000, ByteBuffer)};
   if (handle == nullptr) {
-    hd_info("监听网卡设备失败: ", hd::util::ByteBuffer);
+    hd_line("监听网卡设备失败: ", ByteBuffer);
     exit(EXIT_FAILURE);
   }
   /// apply filter
@@ -148,13 +151,13 @@ static pcap_t* OpenLiveHandle(capture_option & option, uint32_t & link_type) {
   return handle;
 }
 
-static pcap_t* OpenDeadHandle(capture_option & option, uint32_t & link_type) {
+static pcap_t* OpenDeadHandle(capture_option& option, uint32_t& link_type) {
   //using offline = pcap_t* (*)(const char*, u_int, char*);
   using offline = pcap_t* (*)(const char*, char*);
   //offline open_offline{pcap_open_offline_with_tstamp_precision};
   offline const open_offline{pcap_open_offline};
   if (not fs::exists(option.pcap_file)) {
-    hd_info("无法打开文件 ", option.pcap_file);
+    hd_line("无法打开文件 ", option.pcap_file);
     exit(EXIT_FAILURE);
   }
   //auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
@@ -166,171 +169,173 @@ static pcap_t* OpenDeadHandle(capture_option & option, uint32_t & link_type) {
 }
 
 static void Doc() {
-  std::cout << "\n\t选项: [d:D:F:N:L:R:E:K:P:S:I:W:p:re4ui6whTt]\n\n";
+  std::cout << "\n\t选项: [d:D:F:N:L:R:E:K:P:S:W:p:re4ui6whTt]\n\n";
   std::cout
-      << "\t-d, --device         哪一个网卡\n"
-      << "\t-J, --workers        哪一个网卡\n"
-      << "\t-D, --duration       D秒后结束抓包\n"
-      << "\t-F, --filter         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
-      << "\t-N, --num-packets    指定抓包的数量\n"
-      << "\t-L, --min-packets    流的最小packet数量\n"
-      << "\t-R, --max-packets    流的最大packet数量\n"
-      << "\t-E, --interval       超时时间(新到达的packet距离上一个packet的时间)\n"
-      << "\t-K, --kafka-config   kafka 配置文件路径\n"
-      << "\t-P, --pcap-file      pcap文件路径, 处理离线 pcap,pcapng 文件\n"
-      << "\t-S, --stride         将 S 位二进制串转换为 uint 数值(default 8)\n"
-      << "\t-W, --write          输出到文件, 需指定输出文件路径\n"
-      << "\t-I, --index          指定要输出的列, 可选:\n"
-      << "                                    0: 源IP \n"
-      << "                                    1: 目的IP\n"
-      << "                                    2: 源端口\n"
-      << "                                    3: 目的端口\n"
-      << "                                    4: 五元组(default)\n"
-      << "\t-r, --radiotap       包含 radiotap 报文(currently not supported)\n"
-      << "\t-w, --wlan           包含 wlan 报文(currently not supported)\n"
-      << "\t-e, --eth            包含 eth 报文\n"
-      << "\t-4, --ipv4           包含 ipv4 报文\n"
-      << "\t-6, --ipv6           包含 ipv6 报文(currently not supported)\n"
-      << "\t-t, --tcp            包含 tcp 报文\n"
-      << "\t-T, --timestamp      包含时间戳(秒,毫秒)\n"
-      << "\t-u, --udp            包含 udp 报文\n"
-      << "\t-i, --icmp           包含 icmp 报文(currently not in plan)\n"
-      << "\t-p, --payload-payload_len    包含 n 字节的 payload\n"
-      << "\t-h, --help           用法帮助\n"
-      << std::endl;
+    << "\t-d, --device         哪一个网卡\n"
+    << "\t-J, --workers        哪一个网卡\n"
+    << "\t-D, --duration       D秒后结束抓包\n"
+    << "\t-F, --filter         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
+    << "\t-N, --num-packets    指定抓包的数量\n"
+#ifdef INCLUDE_KAFKA
+    << "\t-L, --min-packets    流的最小packet数量\n"
+    << "\t-R, --max-packets    流的最大packet数量\n"
+    << "\t-E, --interval       超时时间(新到达的packet距离上一个packet的时间)\n"
+    << "\t-K, --kafka-config   kafka 配置文件路径\n"
+#endif
+    << "\t-P, --pcap-file      pcap文件路径, 处理离线 pcap,pcapng 文件\n"
+    << "\t-W, --write          输出到文件, 需指定输出文件路径\n"
+    // << "\t-I, --index          指定要输出的列, 可选:\n"
+    // << "                                    0: 源IP \n"
+    // << "                                    1: 目的IP\n"
+    // << "                                    2: 源端口\n"
+    // << "                                    3: 目的端口\n"
+    // << "                                    4: 五元组(default)\n"
+    << "\t-S, --stride         将 S 位二进制串转换为 uint 数值(default 8)\n"
+    << "\t-r, --radiotap       包含 radiotap 报文(currently not supported)\n"
+    << "\t-w, --wlan           包含 wlan 报文(currently not supported)\n"
+    << "\t-e, --eth            包含 eth 报文\n"
+    << "\t-4, --ipv4           包含 ipv4 报文\n"
+    << "\t-6, --ipv6           包含 ipv6 报文(currently not supported)\n"
+    << "\t-t, --tcp            包含 tcp 报文\n"
+    << "\t-T, --timestamp      包含时间戳(秒,毫秒)\n"
+    << "\t-u, --udp            包含 udp 报文\n"
+    << "\t-i, --icmp           包含 icmp 报文(currently not in plan)\n"
+    << "\t-p, --payload        包含 n 字节的 payload\n"
+    << "\t-h, --help           用法帮助\n"
+    << std::endl;
 }
 
-static void ParseOptions(capture_option & arguments, int argc, char* argv[]) {
+static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
   int longind = 0, option, j;
   opterr = 0;
   while ((option = getopt_long(argc, argv, shortopts, longopts, &longind)) not_eq -1) {
     switch (option) {
-      case 'd':
-        arguments.device = optarg;
-        break;
-      case 'C':
-        arguments.caplen = true;
-        break;
-      case 'J':
-        j = std::stoi(optarg);
-        if (j < 1) {
-          hd_info("worker 必须 >= 1");
-          exit(EXIT_FAILURE);
-        }
-        arguments.workers = j;
-        break;
-      case 'D':
-        arguments.duration = std::stoi(optarg);
-        break;
-      case 'F':
-        arguments.filter = optarg;
-        break;
-      case 'f':
-        // try-except: fill = std::stoi(optarg);
-        arguments.fill_bit = std::stoi(optarg);
-        break;
-      case 'N':
-        arguments.num_packets = std::stoi(optarg);
-        break;
-      case 'K':
-        arguments.send_kafka = true;
-        arguments.kafka_config = optarg;
-        arguments.offline_mode = false;
-        if (arguments.kafka_config.empty()) {
-          hd_info("-k, --kafka-config 缺少值");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'p':
-        arguments.payload_len = std::stoi(optarg);
-        break;
-      case 'S':
-        arguments.stride = std::stoi(optarg);
-        if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
-            arguments.stride not_eq 32 and arguments.stride not_eq 64) {
-          hd_info("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'I':
-        arguments.output_index = std::stoi(optarg);
-        if (arguments.output_index > 5 or arguments.output_index < 0) {
-          hd_info("-I, --index 参数错误, 退出程序");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'L':
-        arguments.min_packets = std::stoi(optarg);
-        break;
-      case 'R':
-        arguments.max_packets = std::stoi(optarg);
-        break;
-      case 'E':
-        arguments.packetTimeout = std::stoi(optarg);
-        break;
-      case 'W':
-        arguments.write_file = true;
-        arguments.output_file = optarg;
-        if (optarg == nullptr or arguments.output_file.empty()) {
-          hd_info("-W, --write 缺少值");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'P':
-        arguments.offline_mode = true;
-        arguments.live_mode = false;
-        arguments.pcap_file = optarg;
-        if (arguments.pcap_file.empty()) {
-          hd_info("-P, --pcap-file 缺少值");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'r':
-        arguments.include_radiotap = true;
-        break;
-      case 'e':
-        arguments.include_eth = true;
-        break;
-      case '4':
-        arguments.include_ip4 = true;
-        break;
-      case 'u':
-        arguments.include_udp = true;
-        break;
-      case 'i':
-        arguments.include_icmp = true;
-        break;
-      case '6':
-        arguments.include_ipv6 = true;
-        break;
-      case 'w':
-        arguments.include_wlan = true;
-        break;
-      case 'h':
-        hd::util::Doc();
-        exit(EXIT_SUCCESS);
-      case 't':
-        arguments.include_tcp = true;
-        break;
-      case 'T':
-        arguments.timestamp = true;
-        break;
-      case 'V':
-        arguments.verbose = true;
-        break;
-      case 'U':
-        arguments.unsign = true;
-        break;
-      case '?':
-        hd_info("选项 ", '-', char(optopt), (" 的参数是必需的"));
+    case 'd':
+      arguments.device = optarg;
+      break;
+    case 'C':
+      arguments.caplen = true;
+      break;
+    case 'J':
+      j = std::stoi(optarg);
+      if (j < 1) {
+        hd_line("worker 必须 >= 1");
         exit(EXIT_FAILURE);
-      default:
-        break;
+      }
+      arguments.workers = j;
+      break;
+    case 'D':
+      arguments.duration = std::stoi(optarg);
+      break;
+    case 'F':
+      arguments.filter = optarg;
+      break;
+    case 'f':
+      // try-except: fill = std::stoi(optarg);
+      arguments.fill_bit = std::stoi(optarg);
+      break;
+    case 'N':
+      arguments.num_packets = std::stoi(optarg);
+      break;
+    case 'K':
+      arguments.send_kafka = true;
+      arguments.kafka_config = optarg;
+      arguments.offline_mode = false;
+      if (arguments.kafka_config.empty()) {
+        hd_line("-k, --kafka-config 缺少值");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'p':
+      arguments.payload = std::stoi(optarg);
+      break;
+    case 'S':
+      arguments.stride = std::stoi(optarg);
+      if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
+        arguments.stride not_eq 32 and arguments.stride not_eq 64) {
+        hd_line("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
+        exit(EXIT_FAILURE);
+      }
+      break;
+    // case 'I':
+    //   arguments.output_index = std::stoi(optarg);
+    //   if (arguments.output_index > 5 or arguments.output_index < 0) {
+    //     hd_info("-I, --index 参数错误, 退出程序");
+    //     exit(EXIT_FAILURE);
+    //   }
+    //   break;
+    case 'L':
+      arguments.min_packets = std::stoi(optarg);
+      break;
+    case 'R':
+      arguments.max_packets = std::stoi(optarg);
+      break;
+    case 'E':
+      arguments.packetTimeout = std::stoi(optarg);
+      break;
+    case 'W':
+      arguments.write_file = true;
+      arguments.output_file = optarg;
+      if (optarg == nullptr or arguments.output_file.empty()) {
+        hd_line("-W, --write 缺少值");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'P':
+      arguments.offline_mode = true;
+      arguments.live_mode = false;
+      arguments.pcap_file = optarg;
+      if (arguments.pcap_file.empty()) {
+        hd_line("-P, --pcap-file 缺少值");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'r':
+      arguments.include_radiotap = true;
+      break;
+    case 'e':
+      arguments.include_eth = true;
+      break;
+    case '4':
+      arguments.include_ip4 = true;
+      break;
+    case 'u':
+      arguments.include_udp = true;
+      break;
+    case 'i':
+      arguments.include_icmp = true;
+      break;
+    case '6':
+      arguments.include_ipv6 = true;
+      break;
+    case 'w':
+      arguments.include_wlan = true;
+      break;
+    case 'h':
+      hd::util::Doc();
+      exit(EXIT_SUCCESS);
+    case 't':
+      arguments.include_tcp = true;
+      break;
+    case 'T':
+      arguments.timestamp = true;
+      break;
+    case 'V':
+      arguments.verbose = true;
+      break;
+    case 'U':
+      arguments.unsign = true;
+      break;
+    case '?':
+      hd_line("选项 ", '-', char(optopt), (" 的参数是必需的"));
+      exit(EXIT_FAILURE);
+    default:
+      break;
     }
   }
 }
 
-template<typename T>
+template <typename T>
 static int inline min(T _a, T _b) {
   return _a < _b ? _a : _b;
 }

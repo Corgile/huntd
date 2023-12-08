@@ -5,7 +5,6 @@
 #ifndef HOUND_KAFKA_HPP
 #define HOUND_KAFKA_HPP
 
-#include <fstream>
 #include <hound/sink/impl/kafka/kafka_config.hpp>
 #include <hound/sink/impl/kafka/connection_pool.hpp>
 #include <hound/sink/impl/kafka/kafka_connection.hpp>

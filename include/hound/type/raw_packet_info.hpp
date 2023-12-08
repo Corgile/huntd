@@ -6,7 +6,6 @@
 #define HOUND_RAW_PACKET_INFO_HPP
 
 #include <pcap/pcap.h>
-#include <vector>
 #include <cstring>
 #include <hound/common/macro.hpp>
 
@@ -23,11 +22,6 @@ struct raw_packet_info {
     this->info_hdr = std::move(*pkthdr);
     this->byte_arr.reset(new byte_t[len + 1]);
     std::memcpy(this->byte_arr.get(), packet, len);
-  }
-
-private:
-  int inline min(int _a, int _b) {
-    return _a < _b ? _a : _b;
   }
 };
 

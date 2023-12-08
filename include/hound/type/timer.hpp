@@ -11,7 +11,7 @@ class [[nodiscard]] Timer {
 public:
   Timer() = delete;
 
-  Timer(double& elapsed) : m_elapsed(elapsed) {
+  explicit Timer(double& elapsed) : m_elapsed(elapsed) {
     m_elapsed = 0;
     start_time = std::chrono::high_resolution_clock::now();
   }

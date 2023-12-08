@@ -29,9 +29,6 @@ private:
 
   void consumer_job();
 
-public:
-
-
 private:
   pcap_t* mHandle{nullptr};
   uint32_t mLinkType{};

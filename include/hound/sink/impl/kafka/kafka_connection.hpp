@@ -6,15 +6,13 @@
 #define HOUND_KAFKA_CONNECTION_HPP
 
 #include <rdkafkacpp.h>
-#include <memory>
 #include <string>
 
 #include <hound/common/macro.hpp>
+#include <hound/sink/impl/kafka/kafka_config.hpp>
 #include <hound/sink/impl/kafka/callback/cb_hash_partitioner.hpp>
 #include <hound/sink/impl/kafka/callback/cb_producer_delivery_report.hpp>
 #include <hound/sink/impl/kafka/callback/cb_producer_event.hpp>
-#include <hound/sink/impl/kafka/constants.hpp>
-#include <hound/sink/impl/kafka/kafka_config.hpp>
 
 namespace hd::entity {
 class kafka_connection {
@@ -32,12 +30,9 @@ private:
 
 public:
   /**
-   * @brief message_publisher
-   * @param[in] brokers
-   * @param[in] topic
-   * @param[in] partition
+   * @brief message publisher
    */
-  kafka_connection(hd::entity::kafka_config::_conn& conn) {
+  explicit kafka_connection(kafka_config::_conn const& conn) {
     std::string error_buffer;
     this->m_partition = conn.partition;
     // 创建配置对象
@@ -69,10 +64,10 @@ public:
 
   /**
    * @brief push Message to Kafka
-   * @param payload, message data
+   * @param payload, _key
    */
   void pushMessage(const std::string& payload, const std::string& _key) {
-    RdKafka::ErrorCode errorCode = m_connection->produce(
+    RdKafka::ErrorCode const errorCode = m_connection->produce(
         this->m_topic,
         this->m_partition,
         RdKafka::Producer::RK_MSG_COPY,
@@ -83,7 +78,7 @@ public:
 
     m_connection->poll(60'000); // timeout ms.
     if (errorCode not_eq RdKafka::ERR_NO_ERROR) {
-      hd_info(RED("发送失败: "), RdKafka::err2str(errorCode), CYAN(", 长度: "));
+      hd_line(RED("发送失败: "), err2str(errorCode), CYAN(", 长度: "));
       std::cout << "\033[34;1m" << payload.size() << "\033[0m" << std::endl;
       // kafka 队列满，等待 5000 ms
       if (errorCode == RdKafka::ERR__QUEUE_FULL) {
@@ -94,7 +89,7 @@ public:
 
   ~kafka_connection() {
     while (m_connection->outq_len() > 0) {
-      hd_info(YELLOW("Connection "),
+      hd_line(YELLOW("Connection "),
               std::this_thread::get_id(),
               RED(" Waiting for queue len: "),
               m_connection->outq_len());

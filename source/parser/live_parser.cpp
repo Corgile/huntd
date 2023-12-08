@@ -17,7 +17,7 @@
 #endif
 
 hd::type::LiveParser::LiveParser() {
-  this->mHandle = util::OpenLiveHandle(opt, this->mLinkType);
+  this->mHandle = util::OpenLiveHandle(opt);
 #if defined(INCLUDE_KAFKA)
   if (opt.send_kafka) {
     mSink.reset(new KafkaSink(opt.kafka_config));
@@ -54,8 +54,8 @@ void hd::type::LiveParser::startCapture() {
 
 void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
   auto const _this{reinterpret_cast<LiveParser*>(user_data)};
-  std::unique_lock<std::mutex> _accessToQueue(_this->mQueueLock);
-  _this->mPacketQueue.emplace(pkthdr, packet, util::min(opt.payload_len + 120, static_cast<int>(pkthdr->caplen)));
+  std::unique_lock _accessToQueue(_this->mQueueLock);
+  _this->mPacketQueue.emplace(pkthdr, packet, util::min(opt.payload + 120, static_cast<int>(pkthdr->caplen)));
   _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
 #if defined(BENCHMARK)
@@ -66,7 +66,7 @@ void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkt
 void hd::type::LiveParser::consumer_job() {
   /// 采用标志变量keepRunning来控制detach的线程
   while (keepRunning) {
-    std::unique_lock<std::mutex> lock(this->mQueueLock);
+    std::unique_lock lock(this->mQueueLock);
     this->cv_consumer.wait(lock, [this] {
       return not this->mPacketQueue.empty() or not keepRunning;
     });
@@ -79,9 +79,9 @@ void hd::type::LiveParser::consumer_job() {
     mSink->consumeData({front});
 #if defined(BENCHMARK)
     ++num_consumed_packet;
-#endif
+#endif//defined(BENCHMARK)
   }
-  hd_info("Worker [", std::this_thread::get_id(), "] 退出");
+  hd_line("Worker [", std::this_thread::get_id(), "] 退出");
 }
 
 void hd::type::LiveParser::stopCapture() {
@@ -98,10 +98,10 @@ hd::type::LiveParser::~LiveParser() {
   /// 再控制游离线程停止访问主线程的资源
 #if defined(BENCHMARK)
   using namespace global;
-  hd_info_one(num_captured_packet);
-  hd_info_one(num_dropped_packets);
-  hd_info_one(num_consumed_packet);
-  hd_info_one(num_written_csv);
+  hd_line(CYAN("num_captured_packet = "), num_captured_packet.load());
+  hd_line(CYAN("num_dropped_packets = "), num_dropped_packets.load());
+  hd_line(CYAN("num_consumed_packet = "), num_consumed_packet.load());
+  hd_line(CYAN("num_written_csv = "), num_written_csv.load());
 #endif//- #if defined(BENCHMARK)
   hd_debug(this->mPacketQueue.size());
 }

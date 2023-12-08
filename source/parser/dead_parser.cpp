@@ -3,15 +3,17 @@
 //
 #if defined(DEAD_MODE)
 
-  #include <hound/parser/dead_parser.hpp>
+#include <hound/common/util.hpp>
+#include <hound/common/macro.hpp>
+#include <hound/parser/dead_parser.hpp>
+#include <hound/sink/impl/json_file_sink.hpp>
+#include <hound/sink/impl/text_file_sink.hpp>
 
-  #include "hound/common/util.hpp"
+#if defined(BENCHMARK)
 
-  #if defined(BENCHMARK)
+#include <hound/type/timer.hpp>
 
-    #include <hound/type/timer.hpp>
-
-  #endif
+#endif
 
 hd::type::DeadParser::DeadParser() {
   this->mHandle = util::OpenDeadHandle(global::opt, this->mLinkType);
@@ -21,7 +23,8 @@ hd::type::DeadParser::DeadParser() {
   }
   if (global::opt.output_file.ends_with(".json")) {
     mSink.reset(new JsonFileSink(global::opt.output_file));
-  } else {
+  }
+  else {
     mSink.reset(new TextFileSink(global::opt.output_file));
   }
 }
@@ -39,19 +42,23 @@ void hd::type::DeadParser::processFile() {
 
 void hd::type::DeadParser::deadHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
   auto const _this{reinterpret_cast<DeadParser*>(user_data)};
-  std::unique_lock<std::mutex> _accessToQueue(_this->mQueueLock);
-  _this->mPacketQueue.push({pkthdr, packet, util::min<int>(global::opt.payload_len + 120, (int) pkthdr->caplen)});
+  std::unique_lock _accessToQueue(_this->mQueueLock);
+  _this->mPacketQueue.push({
+    pkthdr,
+    packet,
+    util::min<int>(global::opt.payload + 128, static_cast<int>(pkthdr->caplen))
+    });
   _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
 #if defined(BENCHMARK)
-  global::num_captured_packet++;
+  ++global::num_captured_packet;
 #endif //BENCHMARK
 }
 
 void hd::type::DeadParser::consumer_job() {
   /// 采用标志变量keepRunning来控制detach的线程
   while (keepRunning) {
-    std::unique_lock<std::mutex> lock(this->mQueueLock);
+    std::unique_lock lock(this->mQueueLock);
     this->cv_consumer.wait(lock, [this] {
       return not this->mPacketQueue.empty() or not keepRunning;
     });
@@ -63,7 +70,7 @@ void hd::type::DeadParser::consumer_job() {
     cv_producer.notify_one();
     mSink->consumeData({packetInfo});
 #if defined(BENCHMARK)
-    global::num_consumed_packet++;
+    ++global::num_consumed_packet;
 #endif
   }
 }
@@ -77,11 +84,11 @@ hd::type::DeadParser::~DeadParser() {
   keepRunning.store(false);
 #if defined(BENCHMARK)
   using namespace global;
-  hd_info_one(num_captured_packet);
-  hd_info_one(num_dropped_packets);
-  hd_info_one(num_consumed_packet);
-  hd_info_one(num_written_csv);
-  hd_info_one(_timeConsumption_ms);
+  hd_line(CYAN("num_captured_packet = "), num_captured_packet.load());
+  hd_line(CYAN("num_dropped_packets = "), num_dropped_packets.load());
+  hd_line(CYAN("num_consumed_packet = "), num_consumed_packet.load());
+  hd_line(CYAN("num_written_csv = "), num_written_csv.load());
+  hd_line(CYAN("_timeConsumption_ms = "), _timeConsumption_ms);
 #endif//- #if defined(BENCHMARK)
   hd_debug(this->mPacketQueue.size());
   ///- 最好不要强制exit(0), 因为还有worker在死等。

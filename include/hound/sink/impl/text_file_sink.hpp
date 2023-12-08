@@ -19,18 +19,18 @@ class TextFileSink : public BaseSink {
 private:
   SyncedStream<std::ofstream> mOutFile;
 public:
-  TextFileSink(const std::string& fileName) : mOutFile(fileName, std::ios::out) {
+  explicit TextFileSink(const std::string& fileName) : mOutFile(fileName, std::ios::out) {
     hd_debug(__PRETTY_FUNCTION__);
     auto parent = absolute(fs::path(fileName)).parent_path();
-    if (not fs::exists(parent)) {
-      fs::create_directories(parent);
+    if (not exists(parent)) {
+      create_directories(parent);
     }
-    bool isGood = mOutFile.invoke([](std::ofstream& stream) {
+    bool const isGood = mOutFile.invoke([](std::ofstream const& stream) {
       return stream.good();
     });
 
     if (not isGood) {
-      hd_info(RED("无法打开输出文件: "), fileName);
+      hd_line(RED("无法打开输出文件: "), fileName);
       exit(EXIT_FAILURE);
     }
   }
@@ -42,7 +42,7 @@ public:
     this->fillCsvBuffer(data, buffer);
     this->mOutFile << std::move(buffer);
 #if defined(BENCHMARK)
-    global::num_written_csv++;
+    ++global::num_written_csv;
 #endif //BENCHMARK
   }
 };

@@ -7,7 +7,8 @@
 
 #include <string>
 #include <vector>
-#include <array>
+#include <pcap/bpf.h>
+#include <hound/type/pcap_header.hpp>
 #include <struct_json/json_writer.h>
 
 namespace hd::entity {
@@ -20,7 +21,7 @@ struct hd_packet {
 
   hd_packet() = default;
 
-  hd_packet(const type::PcapHeader& _pcapHead) {
+  explicit hd_packet(const type::PcapHeader& _pcapHead) {
     ts_sec = _pcapHead.ts_sec;
     ts_usec = _pcapHead.ts_usec;
     packet_len = _pcapHead.caplen;

@@ -22,12 +22,12 @@ public:
   }
 
   SyncedStream(StreamType&& stream)
-      : mOutStream(std::forward<StreamType>(stream)), mutex_() {}
+      : mOutStream(std::forward<StreamType>(stream)) {}
 
   /// 同步访问流对象的成员函数
   template<typename Func, typename... Args>
   auto SyncInvoke(Func&& func, Args&& ... args) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard lock(mutex_);
     // return std::invoke(std::forward<Func>(func), mOutStream, std::forward<Args>(args)...);
     return std::forward<Func>(func)(mOutStream, std::forward<Args>(args)...);
   }
@@ -41,7 +41,7 @@ public:
   template<typename T>
   // SyncedStream& operator<<(const T& data) {
   void operator<<(const T& data) {
-    std::scoped_lock<std::mutex> lock(mutex_);
+    std::scoped_lock lock(mutex_);
     mOutStream << data << '\n';
     // 不返回*this是因为外部调用 << 时:
     // filestream << content << other;

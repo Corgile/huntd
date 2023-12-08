@@ -22,96 +22,86 @@ hd::type::capture_option::capture_option() {
   this->unsign = false;
   this->caplen = false;
   /// mode
-  this->send_kafka = false;
+
   this->write_file = false;
   this->offline_mode = false;
   this->live_mode = true;
   /// config
-  this->payload_len = 0;
+  this->payload = 0;
   this->num_packets = -1;
   this->fill_bit = 0;
+#ifdef INCLUDE_KAFKA
+  this->send_kafka = false;
   this->min_packets = 5;
   this->max_packets = 100;
+#endif
   this->packetTimeout = 20;
   this->duration = 0;
   this->stride = 8;
-  this->output_index = 4;
   this->kafka_config = {};
   this->output_file = {};
   this->filter = {};
   this->device = {};
-
-  this->index_map = {
-      {0, "src_ip"},
-      {1, "dst_ip"},
-      {2, "src_prt"},
-      {3, "dst_prt"},
-      {4, "flow_id"}
-  };
 }
 
-void hd::type::capture_option::print() {
-  hd_info(CYAN("当前运行参数: "));
-  if (include_radiotap)
-    hd_info(CYAN("radiotap = "), "true");
-  if (include_wlan)
-    hd_info(CYAN("wlan     = "), "true");
-  if (include_eth)
-    hd_info(CYAN("eth      = "), "true");
-  if (include_ip4)
-    hd_info(CYAN("ipv4     = "), "true");
-  if (include_ipv6)
-    hd_info(CYAN("ipv6     = "), "true");
-  if (include_tcp)
-    hd_info(CYAN("tcp      = "), "true");
-  if (include_udp)
-    hd_info(CYAN("udp      = "), "true");
-  if (include_icmp)
-    hd_info(CYAN("icmp     = "), "true");
-  if (include_vlan)
-    hd_info(CYAN("vlan     = "), "true");
-  if (caplen)
-    hd_info(CYAN("caplen   = "), "true");
-  if (timestamp)
-    hd_info(CYAN("time     = "), "true");
-  if (payload_len > 0)
-    hd_info(CYAN("payload  = "), payload_len, " Bytes");
-  if (num_packets <= 0) {
-    hd_info(CYAN("Packets  = "), "INF");
-  } else {
-    hd_info(CYAN("Packets  = "), num_packets);
+// @formatter:off
+void hd::type::capture_option::print() const {
+  hd_info(CYAN("\n包含流量包的: "));
+  if (include_radiotap) hd_info("radiotap, ");
+  if (include_wlan) hd_info("wlan, ");
+  if (include_eth) hd_info("eth, ");
+  if (include_ip4) hd_info("ipv4, ");
+  if (include_ipv6) hd_info("ipv6, ");
+  if (include_tcp) hd_info("tcp, ");
+  if (include_udp) hd_info("udp, ");
+  if (include_icmp) hd_info("icmp, ");
+  if (include_vlan) hd_info("vlan, ");
+  if (payload > 0) hd_info("头部, ", payload, " 字节payload\n");
+  if (caplen) hd_info(CYAN("报文长度, "));
+  if (timestamp) hd_info(CYAN("时间戳"));
+
+  if (num_packets > 0) {
+    hd_line(CYAN("抓包个数: "), num_packets);
   }
-  hd_info(CYAN("stride   = "), stride);
-  hd_info(CYAN("fill_bit = "), fill_bit);
-  hd_info(CYAN("collTimeout = "), packetTimeout);
-  if (unsign)
-    hd_info(CYAN("unsigned = "), "true");
-  else
-    hd_info(CYAN("unsigned = "), "false");
-  if (live_mode) {
-    hd_info(CYAN("min_pkt  = "), min_packets);
-    hd_info(CYAN("max_pkt  = "), max_packets);
+  hd_line(CYAN("填充值: "), fill_bit);
+  hd_line(CYAN("流超时时间: "), packetTimeout, "秒");
+  hd_info(CYAN("将每 "), stride, CYAN(" 位一组"));
+  if (unsign) hd_line(CYAN("按" YELLOW("无") CYAN("符号类型转换为10进制")));
+  else hd_line(CYAN("按" YELLOW("有") CYAN("符号类型转换为10进制")));
+  hd_line(CYAN("包处理线程: "), workers);
+  hd_line(CYAN("filter: "), filter);
+  //@formatter:on
+
+#ifdef INCLUDE_KAFKA
+  if (send_kafka) {
+    if (not kafka_config.empty()) {
+      hd_line(CYAN("kafka设置:  "), kafka_config);
+    }
+    hd_line(CYAN("流最小包数: "), min_packets);
+    hd_line(CYAN("流最大包数: "), max_packets);
   }
-  hd_info(CYAN("workers  = "), workers);
-  if (this->output_index not_eq -1) {
-    hd_info(CYAN("index    = "), this->index_map[output_index]);
+#endif
+
+#if defined(INCLUDE_KAFKA) || defined(LIVE_MODE)
+  if (not device.empty() and live_mode) {
+    hd_info(CYAN("采集网卡: "), device);
   }
   if (duration > 0) {
-    hd_info(CYAN("duration = "), duration, "秒");
+    hd_line(CYAN(", 持续 "), duration, " 秒");
   }
-  if (send_kafka and not kafka_config.empty()) {
-    hd_info(CYAN("config   = "), kafka_config);
-  }
+#endif
+
+#if defined(LIVE_MODE) || defined(DEAD_MODE)
   if (this->write_file and not output_file.empty()) {
-    hd_info(CYAN("output   = "), output_file);
+    hd_line(CYAN("输出文件:  "), output_file);
   }
+#endif
+
+#if defined(DEAD_MODE)
   if (this->offline_mode and not pcap_file.empty()) {
-    hd_info(CYAN("pcap_file = "), pcap_file);
+    hd_line(CYAN("输入文件:  "), pcap_file);
   }
-  if (not device.empty() and live_mode) {
-    hd_info(CYAN("device   = "), device);
-  }
-  hd_info(CYAN("filter   = "), filter);
+#endif
 }
 
 hd::type::capture_option::~capture_option() {

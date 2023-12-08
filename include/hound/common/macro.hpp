@@ -9,65 +9,56 @@
 #include <iostream>
 
 namespace hd::macro {
-template<typename... T>
-static void printL(T... args) {
-  ((std::cout << args), ...) << "\n";
+template <typename ...T>
+static void printL(T ...args) {
+  ((std::cout << args), ...);
 }
 } // namespace hd::macro
 
-#pragma region 常量宏 @formatter:off
+#pragma region 常量宏
 
-#if not defined(CONSOLE)
+#ifndef CONSOLE
 /// print to console
 #define CONSOLE	 0x1
-#endif
+#endif//CONSOLE
 
-#if not defined(TEXT_FILE)
+#ifndef TEXT_FILE
 /// write to csv/ascii text file
 #define TEXT_FILE	 0x2
-#endif
+#endif//TEXT_FILE
 
-#if not defined(JSON_FILE)
+#ifndef JSON_FILE
 /// write to json file
 #define JSON_FILE	 0x4
-#endif
+#endif//JSON_FILE
 
-#if not defined(MSG_QUEUE)
+#ifndef MSG_QUEUE
 /// send to some message queue (kafka)
 #define MSG_QUEUE	 0x8
-#endif
+#endif//MSG_QUEUE
 
-#if not defined(SILENT)
+#ifndef SILENT
 /// silent
 #define SILENT	 -1
-#endif
+#endif//SILENT
 
-#if not defined(IP4_PADSIZE)
+#ifndef IP4_PADSIZE
 #define IP4_PADSIZE  60
-#endif//IPV4_HEADER_PADDING_LEN
+#endif//IP4_PADSIZE
 
-#if not defined(TCP_PADSIZE)
+#ifndef TCP_PADSIZE
 #define TCP_PADSIZE  60
-#endif//TCP_HEADER_PADDING_LEN
+#endif//TCP_PADSIZE
 
-#if not defined(UDP_PADSIZE)
+#ifndef UDP_PADSIZE
 #define UDP_PADSIZE  8
-#endif//UDP_HEADER_PADDING_LEN
-#pragma endregion 常量宏 @formatter:on
+#endif//UDP_PADSIZE
+#pragma endregion 常量宏
 
-#pragma region 功能性宏 @formatter:off
+#pragma region 功能性宏
 
-#if not defined(APPEND_SPRINTF)
-#define APPEND_SPRINTF(cond, buffer, format, ...) 			\
-	do { 																							\
-		if(not cond) break;															\
-		std::unique_ptr<char> const buff(new char[20]);	\
-		std::sprintf(buff.get(), format, __VA_ARGS__); 	\
-		buffer.append(buff.get()); 											\
-	} while (false)
-#endif//APPEND_SPRINTF
 
-#if not defined(HD_ANSI_COLOR)
+#ifndef HD_ANSI_COLOR
 #define HD_ANSI_COLOR
 #define RED(x)     "\033[31;1m" x "\033[0m"
 #define GREEN(x)   "\033[32;1m" x "\033[0m"
@@ -76,31 +67,29 @@ static void printL(T... args) {
 #define CYAN(x)    "\033[36;1m" x "\033[0m"
 #endif //HD_ANSI_COLOR
 
-#if not defined(hd_info)
-#define hd_info(x...)     \
-	do {                      \
-		hd::macro::printL(x);   \
-	} while (false)
-#endif//INFO
+#ifndef hd_info
+#define hd_info(...)       			\
+do {                     				\
+hd::macro::printL(__VA_ARGS__); \
+} while (false)
+#endif//-hd_info
 
-/// 只针对打印一个变量
-#if not defined(hd_info_one)
-#if defined(HD_DEV)
-#define hd_info_one(x)  dbg(x)
-#else
-		#define hd_info_one(x)  std::cout << CYAN(#x) " = " << x << "\n"
-#endif
-#endif//-hd_info_one
+#ifndef hd_line
+#define hd_line(...)       			      \
+do {                     				      \
+hd::macro::printL(__VA_ARGS__, "\n"); \
+} while (false)
+#endif//-hd_line
 
 /// 仅在开发阶段作为调试使用
-#if not defined(hd_debug)
+#ifndef hd_debug
 #if defined(HD_DEV)
-#define hd_debug  dbg
+#define hd_debug(...)  dbg(__VA_ARGS__)
 #else//- not HD_DEV
 		#define hd_debug(...)
 #endif
 #endif//- hd_debug
 
-#pragma endregion 功能性宏 @formatter:on
+#pragma endregion 功能性宏
 
 #endif //HOUND_MACROS_HPP

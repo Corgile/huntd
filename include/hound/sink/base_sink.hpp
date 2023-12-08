@@ -16,10 +16,13 @@ namespace hd::type {
  */
 class BaseSink {
   SyncedStream<std::ostream&> mConsole;
-public:
-  BaseSink(std::string const&) : mConsole(std::cout) {}
 
-  BaseSink() : mConsole(std::cout) {}
+public:
+  BaseSink(std::string const&) : mConsole(std::cout) {
+  }
+
+  BaseSink() : mConsole(std::cout) {
+  }
 
   virtual void consumeData(ParsedData const& data) {
     // TODO: 异步
@@ -27,16 +30,15 @@ public:
     std::string buffer;
     this->fillCsvBuffer(data, buffer);
 #if defined(HD_DEV)
-    hd_info_one(std::move(buffer));
+    hd_line(std::move(buffer));
 #else
     mConsole << std::move(buffer);
 #endif
-  };
+  }
 
-  virtual ~BaseSink() {};
+  virtual ~BaseSink() = default;
 
 protected:
-  // TODO : static抽出去，也许能优化一下
   void fillCsvBuffer(ParsedData const& data, std::string& buffer) const {
     using namespace global;
     buffer.append(data.m5Tuple).append(",");
@@ -47,10 +49,10 @@ protected:
 
   void fillRawBitVec(ParsedData const& data, std::string& buffer) const {
     using namespace global;
-    hd::core::ProcessByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIPv4Head, buffer);
-    hd::core::ProcessByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);
-    hd::core::ProcessByteArray<UDP_PADSIZE>(opt.include_udp, data.mUdpHead, buffer);
-    hd::core::ProcessByteArray(opt.payload_len > 0, data.mPayload, buffer);
+    core::ProcessByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIP4Head, buffer);
+    core::ProcessByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);
+    core::ProcessByteArray<UDP_PADSIZE>(opt.include_udp, data.mUdpHead, buffer);
+    core::ProcessByteArray(opt.payload > 0, data.mPayload, buffer);
     buffer.pop_back();
   }
 };

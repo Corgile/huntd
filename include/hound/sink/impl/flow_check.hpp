@@ -18,7 +18,7 @@ using PacketList = std::vector<hd_packet>;
 static void LoadKafkaConfig(kafka_config& config, std::string const& fileName) {
   std::ifstream config_file(fileName);
   if (not config_file.good()) {
-    hd_info(RED("无法打开配置文件: "), fileName);
+    hd_line(RED("无法打开配置文件: "), fileName);
     exit(EXIT_FAILURE);
   }
   std::string line;
@@ -29,14 +29,14 @@ static void LoadKafkaConfig(kafka_config& config, std::string const& fileName) {
     if (value.empty()) continue;
     auto key{line.substr(0, pos)};
     config.put(key, value);
-    hd_info(BLUE("加载配置: "), key, "=", value);
+    hd_line(BLUE("加载配置: "), key, "=", value);
   }
 }
 
-static bool IsFlowReady(PacketList& existing, hd_packet& newPacket) {
+static bool IsFlowReady(PacketList const& existing, hd_packet const& newPacket) {
   if (existing.size() < opt.min_packets) return false;
   return existing.size() == opt.max_packets or
-         existing.back().ts_sec - newPacket.ts_sec >= opt.packetTimeout;
+    existing.back().ts_sec - newPacket.ts_sec >= opt.packetTimeout;
 }
 }
 #endif //HOUND_FLOW_CHECK_HPP

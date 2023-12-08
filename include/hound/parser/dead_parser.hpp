@@ -5,19 +5,19 @@
 #ifndef FC_REFACTORED_DEAD_PARSER_HPP
 #define FC_REFACTORED_DEAD_PARSER_HPP
 
+#include <pcap/pcap.h>
 #include <condition_variable>
-#include <hound/sink/impl/text_file_sink.hpp>
-#include <hound/sink/impl/json_file_sink.hpp>
+#include <hound/type/raw_packet_info.hpp>
+#include <hound/sink/base_sink.hpp>
 
 namespace hd::type {
-class DeadParser {
-
+class DeadParser final {
 public:
   DeadParser();
 
   void processFile();
 
-  virtual ~DeadParser();
+  ~DeadParser();
 
 private:
   static void deadHandler(u_char*, const pcap_pkthdr*, const u_char*);
@@ -35,7 +35,6 @@ private:
   mutable std::mutex mQueueLock;
   double _timeConsumption_ms = 0.;
 };
-
 }
 
 

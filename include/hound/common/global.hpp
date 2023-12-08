@@ -7,14 +7,14 @@
 
 #if defined(BENCHMARK)
 
-  #include <atomic>
+#include <atomic>
 
 #endif//-#if defined(BENCHMARK)
 
 #include <hound/type/capture_option.hpp>
 
 namespace hd::global {
-extern hd::type::capture_option opt;
+extern type::capture_option opt;
 extern std::string fillBit;
 #if defined(BENCHMARK)
 extern std::atomic<int32_t> num_captured_packet;

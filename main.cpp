@@ -35,16 +35,16 @@ int main(int argc, char* argv[]) {
 #endif
   auto handler = [](int signal) {
     if (signal == SIGINT) {
-      hd_info(RED("\n[CtrlC] received. 即将退出..."));
+      hd_line(RED("\n[CtrlC] received. 即将退出..."));
     }
     if (signal == SIGTERM) {
-      hd_info(RED("\n[SIGTERM] received. 即将退出..."));
+      hd_line(RED("\n[SIGTERM] received. 即将退出..."));
     }
     if (signal == SIGKILL) {
-      hd_info(RED("\n[SIGKILL] received. 即将退出..."));
+      hd_line(RED("\n[SIGKILL] received. 即将退出..."));
     }
     // if (signal == SIGSEGV) {
-    //   hd_info(RED("发生了一个段错误: Invalid access to storage."));
+    //   hd_line(RED("发生了一个段错误: Invalid access to storage."));
     //   exit(EXIT_FAILURE);
     // }
   #if defined(LIVE_MODE)
