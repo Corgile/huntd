@@ -84,11 +84,12 @@ static void ProcessStride_32(const int PadSize, const ByteArray& rawData, std::s
 static void ProcessStride_64(const int PadSize, const ByteArray& rawData, std::string& buffer) {
   int i = 0;
   int const _numField = rawData.byteLen / sizeof(uint64_t);
+  int const _padField = BYTE2BIT(PadSize) / 32;
   uint64_t const* arr = reinterpret_cast<uint64_t*>(rawData.data);
   for (; i < _numField; ++i) {
     buffer.append(std::to_string(arr[i])).append(",");
   }
-  for (; i < PadSize - _numField; ++i) {
+  for (; i < _padField; ++i) {
     buffer.append(fillBit);
   }
 }

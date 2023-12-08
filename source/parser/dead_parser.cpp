@@ -44,10 +44,10 @@ void hd::type::DeadParser::deadHandler(byte_t* user_data, const pcap_pkthdr* pkt
   auto const _this{reinterpret_cast<DeadParser*>(user_data)};
   std::unique_lock _accessToQueue(_this->mQueueLock);
   _this->mPacketQueue.push({
-    pkthdr,
-    packet,
-    util::min<int>(global::opt.payload + 128, static_cast<int>(pkthdr->caplen))
-    });
+  pkthdr,
+  packet,
+  util::min<int>(global::opt.payload + 128, static_cast<int>(pkthdr->caplen))
+  });
   _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
 #if defined(BENCHMARK)

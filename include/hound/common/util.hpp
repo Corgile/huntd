@@ -15,8 +15,6 @@
 #include <hound/type/capture_option.hpp>
 #include <hound/type/parsed_data.hpp>
 
-#include "macro.hpp"
-
 namespace hd::util {
 namespace fs = std::filesystem;
 using namespace hd::global;

@@ -47,12 +47,12 @@ int main(int argc, char* argv[]) {
     //   hd_line(RED("发生了一个段错误: Invalid access to storage."));
     //   exit(EXIT_FAILURE);
     // }
-  #if defined(LIVE_MODE)
+#if defined(LIVE_MODE)
     liveParser->stopCapture();
-  #endif
-  #if defined(DEAD_MODE)
+#endif
+#if defined(DEAD_MODE)
     // deadParser->stopProcess();
-  #endif
+#endif
   };
   std::signal(SIGSTOP, handler);
   std::signal(SIGINT, handler);
@@ -64,7 +64,8 @@ int main(int argc, char* argv[]) {
     liveParser = std::make_unique<LiveParser>();
     liveParser->startCapture();
     liveParser->stopCapture();
-  } else
+  }
+  else
 #endif
   {
 #if defined(DEAD_MODE)
