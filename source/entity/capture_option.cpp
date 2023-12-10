@@ -21,16 +21,14 @@ void hd::type::capture_option::print() const {
   if (caplen)           hd_info(CYAN("报文长度, "));
   if (timestamp)        hd_info(CYAN("时间戳"));
 
-  if (num_packets > 0) {
-    hd_line(CYAN("抓包个数: "), num_packets);
-  }
+  if (num_packets > 0)  hd_line(CYAN("抓包个数: "), num_packets);
   hd_line(CYAN("\n填充值: "), fill_bit);
 #if defined(INCLUDE_KAFKA) or defined(LIVE_MODE)
-  if(send_kafka) hd_line(CYAN("流超时时间: "), packetTimeout, "秒");
+  if(send_kafka)        hd_line(CYAN("流超时时间: "), packetTimeout, "秒");
 #endif
   hd_info(CYAN("将每 "), stride, CYAN(" 位一组按"));
-  if (unsign) hd_line(YELLOW("无符号") CYAN("类型转换为10进制"));
-  else        hd_line(YELLOW("有符号") CYAN("类型转换为10进制"));
+  if (unsign)           hd_line(YELLOW("无符号") CYAN("类型转换为10进制"));
+  else                  hd_line(YELLOW("有符号") CYAN("类型转换为10进制"));
   hd_line(CYAN("包处理线程: "), workers);
   hd_line(CYAN("filter: "), filter);
   //@formatter:on
