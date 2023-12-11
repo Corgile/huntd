@@ -24,6 +24,7 @@ hd::type::LiveParser::LiveParser() {
     return;
   }
 #endif
+#ifdef DEAD_MODE
   if (opt.output_file.empty()) {
     mSink.reset(new BaseSink(opt.output_file));
     return;
@@ -34,6 +35,7 @@ hd::type::LiveParser::LiveParser() {
   else {
     mSink.reset(new TextFileSink(opt.output_file));
   }
+#endif
 }
 
 void hd::type::LiveParser::startCapture() {

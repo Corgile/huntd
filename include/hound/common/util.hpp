@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <getopt.h>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <hound/common/macro.hpp>
 #include <hound/common/global.hpp>
@@ -149,6 +148,7 @@ static pcap_t* OpenLiveHandle(capture_option& option) {
   return handle;
 }
 
+#ifdef DEAD_MODE
 static pcap_t* OpenDeadHandle(capture_option& option, uint32_t& link_type) {
   //using offline = pcap_t* (*)(const char*, u_int, char*);
   using offline = pcap_t* (*)(const char*, char*);
@@ -165,6 +165,7 @@ static pcap_t* OpenDeadHandle(capture_option& option, uint32_t& link_type) {
   link_type = pcap_datalink(handle);
   return handle;
 }
+#endif
 
 static void Doc() {
   std::cout << "\n\t选项: [d:D:F:N:L:R:E:K:P:S:W:p:re4ui6whTt]\n\n";
@@ -238,7 +239,9 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
     case 'K':
       arguments.send_kafka = true;
       arguments.kafka_config = optarg;
+#ifdef DEAD_MODE
       arguments.offline_mode = false;
+#endif
       if (arguments.kafka_config.empty()) {
         hd_line("-k, --kafka-config 缺少值");
         exit(EXIT_FAILURE);
@@ -271,6 +274,8 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
     case 'E':
       arguments.packetTimeout = std::stoi(optarg);
       break;
+
+#ifdef DEAD_MODE
     case 'W':
       arguments.write_file = true;
       arguments.output_file = optarg;
@@ -288,6 +293,8 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
+#endif
+
     case 'r':
       arguments.include_radiotap = true;
       break;

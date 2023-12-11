@@ -52,7 +52,7 @@ void hd::type::capture_option::print() const {
   }
 #endif
 
-#if defined(LIVE_MODE) || defined(DEAD_MODE)
+#if defined(DEAD_MODE)
   if (this->write_file and not output_file.empty()) {
     hd_line(CYAN("输出文件:  "), output_file);
   }
