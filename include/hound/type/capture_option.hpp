@@ -27,7 +27,7 @@ struct capture_option final {
   int32_t num_packets{-1};
   int32_t packetTimeout{20};
   bool timestamp{false};
-  bool verbose{true};
+  bool verbose{false};
   bool unsign{true};
   bool caplen{true};
   int32_t fill_bit{0};

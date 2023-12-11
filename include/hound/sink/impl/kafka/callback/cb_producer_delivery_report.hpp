@@ -18,7 +18,7 @@ public:
     }
     // 发送正常的回调
     else {
-      hd_line(GREEN("消息推送成功至: "), message.topic_name(),
+      if(hd::global::opt.verbose) hd_line(GREEN("消息推送成功至: "), message.topic_name(),
               "[", message.partition(), "][", message.offset(), "]");
     }
   }
