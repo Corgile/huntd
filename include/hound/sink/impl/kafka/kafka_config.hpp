@@ -15,7 +15,7 @@ struct kafka_config {
   /// 连接参数
   struct _conn {
     std::string servers;
-    std::string topics;
+    std::string topic_str;
 
     int32_t partition{0};
     int32_t max_idle{60};
@@ -31,7 +31,7 @@ struct kafka_config {
     if (k == hd::keys::KAFKA_BROKERS)
       this->conn.servers = v;
     if (k == hd::keys::KAFKA_TOPICS)
-      this->conn.topics = v;
+      this->conn.topic_str = v;
 
     if (k == hd::keys::KAFKA_PARTITION)
       this->conn.partition = std::stoi(v);

@@ -22,9 +22,9 @@ public:
     kafka_config kafkaConfig;
     flow::LoadKafkaConfig(kafkaConfig, fileName);
     this->mConnectionPool.reset(connection_pool::create(kafkaConfig));
-    std::thread(&KafkaSink::sendingJob, this).detach();
-    std::thread(&KafkaSink::sendingJob, this).detach();
-
+    for (int i = 0; i < opt.workers; ++i) {
+      std::thread(&KafkaSink::sendingJob, this).detach();
+    }
     std::thread(&KafkaSink::cleanerJob, this).detach();
     std::thread(&KafkaSink::cleanerJob, this).detach();
   }
@@ -58,7 +58,7 @@ private:
   void sendingJob() {
     while (mIsRunning) {
       std::unique_lock lock(mtxAccessToQueue);
-      cvMsgSender.wait(lock, [&]() {
+      cvMsgSender.wait(lock, [&]()-> bool {
         return not this->mSendQueue.empty() or not mIsRunning;
       });
       if (not mIsRunning) break;
@@ -74,7 +74,8 @@ private:
     while (mIsRunning) {
       std::this_thread::sleep_for(std::chrono::seconds(10));
       if (not mIsRunning) break;
-      std::scoped_lock lock1(mtxAccessToLastArrived);
+      std::unique_lock lock1(mtxAccessToFlowTable);
+      std::unique_lock lock2(mtxAccessToLastArrived);
       long const now = flow::timestampNow();
       for (auto it = mLastArrived.begin(); it != mLastArrived.end();) {
         const auto& key = it->first;
@@ -83,21 +84,20 @@ private:
           ++it;
           continue;
         }
-        std::unique_lock lock2(mtxAccessToFlowTable);
         auto _list{mFlowTable.at(key)};  // [] 会创建很多空列表
         if (_list.size() >= opt.min_packets) {
           std::scoped_lock queueLock(mtxAccessToQueue);
           mSendQueue.emplace(key, std::move(_list));
-          cvMsgSender.notify_all();
           ++it;
         }
         else {
-          hd_debug(_list.size());
           mFlowTable.erase(key);
           it = mLastArrived.erase(it); // 更新迭代器
         }
-        lock2.unlock();
       }
+      cvMsgSender.notify_all();
+      hd_debug(this->mFlowTable.size());
+      hd_debug(this->mSendQueue.size());
     }
     hd_debug(YELLOW("void cleanerJob() 结束"));
   }
@@ -106,7 +106,7 @@ private:
     if (flow.count < opt.min_packets) return;
     std::string payload;
     struct_json::to_json(flow, payload);
-    auto const connection{mConnectionPool->get_connection()};
+    std::shared_ptr const connection{mConnectionPool->get_connection()};
     connection->pushMessage(payload, flow.flowId);
   }
 

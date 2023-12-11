@@ -45,11 +45,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include/yalanting)
 aux_source_directory(source               SOURCE_FILES)
 aux_source_directory(source/parser        SOURCE_FILES)
 aux_source_directory(source/entity        SOURCE_FILES)
-aux_source_directory(source/sink          SOURCE_FILES)
-aux_source_directory(source/sink/console  SOURCE_FILES)
-aux_source_directory(source/sink/csv      SOURCE_FILES)
-aux_source_directory(source/sink/json     SOURCE_FILES)
-aux_source_directory(source/sink/kafka    SOURCE_FILES)
 #@formatter:on
 
 add_executable(${TARGET} main.cpp ${SOURCE_FILES})

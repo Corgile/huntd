@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <hound/sink/impl/flow_check.hpp>
 
 #include <hound/sink/impl/kafka/kafka_connection.hpp>
 
@@ -16,8 +17,7 @@ namespace hd::entity {
 class connection_pool {
 public:
   /// 获取连接池对象实例（懒汉式单例模式，在获取实例时才实例化对象）
-  static connection_pool*
-  create(const kafka_config& kafkaConfig) {
+  static connection_pool* create(const kafka_config& kafkaConfig) {
     static connection_pool* instance;
     if (instance == nullptr) {
       instance = new connection_pool(kafkaConfig);
@@ -33,27 +33,19 @@ public:
   std::shared_ptr<kafka_connection> get_connection() {
     std::unique_lock lock(_queueMutex);
     cv.wait_for(lock, std::chrono::seconds(_config.conn.timeout_sec),
-                [&] { return not _connectionQue.empty(); });
+                [&]()-> bool { return not _connectionQue.empty(); });
     if (_connectionQue.empty()) {
       std::printf("%s", "获取连接失败，等待空闲连接超时.\n");
       return nullptr;
     }
-    /**
-     * shared_ptr智能指针析构时，会把connection资源直接delete掉，
-     * 相当于调用connection的析构函数，connection就被close掉了。
-     * 这里需要自定义shared_ptr的释放资源的方式，把connection直接归还到queue当中
-     */
     std::shared_ptr<kafka_connection> connection(
-        _connectionQue.front(),
-        [&](kafka_connection* p_con) {
-          /// 这里是在服务器应用线程中调用的，所以一定要考虑队列的线程安全操作
-          std::unique_lock _lock(_queueMutex);
-          /// 在归还回空闲连接队列之前要记录一下连接开始空闲的时刻
-          p_con->refreshAliveTime();
-          _connectionQue.push(p_con);
-        });
+      _connectionQue.front(),
+      [&](kafka_connection* p_con)-> void {
+        std::unique_lock _lock(_queueMutex);
+        p_con->refreshAliveTime();
+        _connectionQue.push(p_con);
+      });
     _connectionQue.pop();
-    /// 消费者取出一个连接之后，通知生产者，生产者检查队列，如果为空则生产
     cv.notify_all();
     return connection;
   }
@@ -70,15 +62,13 @@ public:
   }
 
 private:
-  /// 单例模式——构造函数私有化
   connection_pool(const kafka_config& kafkaConfig) {
-    /// 初始化kafka参数
     this->_config = kafkaConfig;
-    /// 创建初始数量的连接
+    flow::InitGetConf(kafkaConfig.conn, _serverConf, _topicConf);
     for (int i = 0; i < _config.pool.init_size; ++i) {
-      _connectionQue.push(new kafka_connection(_config.conn));
+      _connectionQue.emplace(new kafka_connection(_config.conn, _serverConf, _topicConf));
       ++_connectionCnt;
-      /// 启动一个新的线程，作为连接的生产者 //守护线程
+      /// 启动一个新的线程，作为连接的生产者. 守护线程
       std::thread(&connection_pool::produceConnectionTask, this).detach();
       /// 启动一个新的定时线程，扫描超过maxIdleTime时间的空闲连接，并对其进行回收
       std::thread(&connection_pool::scannerConnectionTask, this).detach();
@@ -92,18 +82,12 @@ private:
   void produceConnectionTask() {
     while (not _finished) {
       std::unique_lock lock(_queueMutex);
-      cv.wait(lock, [&] {
-        /// 队列非空时或者进程还未结束时，此处生产线程进入等待状态,
-        /// 并在进入等待时释放锁，保证消费者线程正常运行
-        return _connectionQue.empty() or _finished;
-      });
+      cv.wait(lock, [&]()-> bool { return _connectionQue.empty() or _finished; });
       if (_finished) break;
-      /// 连接数量没有到达上限，继续创建新的连接
       if (_connectionCnt < _config.pool.max_size) {
-        _connectionQue.push(new kafka_connection(_config.conn));
+        _connectionQue.push(new kafka_connection(_config.conn, _serverConf, _topicConf));
         ++_connectionCnt;
       }
-      /// 通知消费者线程，可以消费连接了
       cv.notify_all();
     }
     hd_debug("produceConnectionTask 结束");
@@ -122,14 +106,11 @@ private:
       std::unique_lock lock(_queueMutex);
       while (_connectionCnt > _config.pool.init_size) {
         auto const connection = _connectionQue.front();
-        if (connection->getAliveTime() >= (_config.conn.max_idle * 1000)) {
-          _connectionQue.pop();
-          --_connectionCnt;
-          delete connection; // 调用~Connection()释放连接
-        } else {
-          // 队头的连接没有超过_maxIdleTime，其它连接肯定也没有
-          break;
-        }
+        if (connection->getAliveTime() < _config.conn.max_idle * 1000) break;
+        _connectionQue.pop();
+        --_connectionCnt;
+        // 调用~Connection()释放连接
+        delete connection;
       }
     }
     hd_debug("scannerConnectionTask 结束");
@@ -145,9 +126,10 @@ private:
   /// 设置条件变量，用于连接生产线程和连接消费线程的通信
   std::condition_variable cv;
 
-  std::atomic<bool> _finished = false;
-};
+  std::atomic<bool> _finished{false};
 
+  std::unique_ptr<Conf> _serverConf, _topicConf;
+};
 } // namespace xhl
 
 #endif // HOUND_KAFKA_CONNECTION_POOL_HPP
