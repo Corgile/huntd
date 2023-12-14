@@ -143,6 +143,8 @@ static pcap_t* OpenLiveHandle(capture_option& option) {
   /// apply filter
   BuildFilter(option);
   SetFilter(handle, option.device);
+  pcap_set_promisc(handle, 1);
+  pcap_set_buffer_size(handle, 25 << 22);
   // link_type = pcap_datalink(handle);
   // hd_debug(link_type);
   return handle;

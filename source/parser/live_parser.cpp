@@ -24,11 +24,11 @@ hd::type::LiveParser::LiveParser() {
     return;
   }
 #endif
-#ifdef DEAD_MODE
   if (opt.output_file.empty()) {
     mSink.reset(new BaseSink(opt.output_file));
     return;
   }
+#ifdef DEAD_MODE
   if (opt.output_file.ends_with(".json")) {
     mSink.reset(new JsonFileSink(opt.output_file));
   }

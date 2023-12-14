@@ -36,6 +36,7 @@ struct capture_option final {
   int32_t workers{1};
   std::string device{};
   std::string filter{};
+  std::string output_file{};
 
 #if defined(INCLUDE_KAFKA) || defined(LIVE_MODE)
   int32_t duration{10};
@@ -51,7 +52,6 @@ struct capture_option final {
 #ifdef DEAD_MODE
   /// mode
   bool write_file{false};
-  std::string output_file{};
   bool offline_mode{false};
   std::string pcap_file{};
 #endif
