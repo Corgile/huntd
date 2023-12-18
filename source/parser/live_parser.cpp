@@ -58,8 +58,8 @@ void hd::type::LiveParser::liveHandler(byte_t* user_data, const pcap_pkthdr* pkt
   auto const _this{reinterpret_cast<LiveParser*>(user_data)};
   std::unique_lock _accessToQueue(_this->mQueueLock);
   _this->mPacketQueue.emplace(pkthdr, packet, util::min(opt.payload + 120, static_cast<int>(pkthdr->caplen)));
-  _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
+  _accessToQueue.unlock();
 #if defined(BENCHMARK)
   ++num_captured_packet;
 #endif //BENCHMARK
