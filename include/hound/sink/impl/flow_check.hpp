@@ -64,9 +64,8 @@ static void InitGetConf(kafka_config::_conn const& conn,
   _kafkaConf->set("event_cb", new ProducerEventCb, error_buffer);
   _kafkaConf->set("statistics.interval.ms", "10000", error_buffer);
   //  1MB
-  _kafkaConf->set("max.message.bytes", "1048588", error_buffer);
-  _kafkaConf->set("message.max.bytes", "1048588", error_buffer);
-
+  _kafkaConf->set("max.message.bytes", "104858800", error_buffer);
+  _kafkaConf->set("enable.manual.events.poll", "false", error_buffer);
   // 1.2、创建 Topic Conf 对象
   _topic.reset(Conf::create(Conf::CONF_TOPIC));
   _topic->set("partitioner_cb", new HashPartitionerCb, error_buffer);

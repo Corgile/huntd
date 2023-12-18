@@ -51,12 +51,12 @@ public:
       payload.size(),
       &_key,
       nullptr);
-    mProducer->poll(10'000); // timeout ms.
+    // mProducer->poll(10'000); // timeout ms.
     if (errorCode == ERR_NO_ERROR) return;
     hd_line(RED("发送失败: "), err2str(errorCode), CYAN(", 长度: "), payload.size());
     // kafka 队列满，等待 5000 ms
     if (errorCode not_eq ERR__QUEUE_FULL) return;
-    mProducer->poll(60'000);
+    mProducer->poll(500);
   }
 
   ~kafka_connection() {

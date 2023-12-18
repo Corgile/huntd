@@ -67,7 +67,7 @@ static option longopts[] = {
 static void BuildFilter(capture_option& opt) {
   bool config_filter_set{false};
   if (not opt.filter.empty()) {
-    opt.filter.append(" and");
+    opt.filter.append(" and(");
   }
   else { opt.include_ip4 = true; }
 
@@ -89,8 +89,13 @@ static void BuildFilter(capture_option& opt) {
     }
     opt.filter.append(")");
   }
-  if (config_filter_set) opt.filter.append("or");
-  opt.filter.append("(vlan and(tcp or udp))");
+  if (config_filter_set) {
+    opt.filter.append("or");
+  }
+  else {
+    opt.filter.append(")");
+  }
+  opt.filter.append("(vlan and(tcp or udp)))");
 
   if (not opt.include_ipv6) {
     /// not ipv6 and not icmp and not icmpv6

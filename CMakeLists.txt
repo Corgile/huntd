@@ -6,10 +6,6 @@ set(TARGET hd)
 set(SEND_KAFKA CACHE BOOL "是否包含Kafka功能" OFF)
 # !>> vendor
 set(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
-# 如果vendor文件夹不存在，先创建
-if (NOT EXISTS ${VENDOR_PATH})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${VENDOR_PATH})
-endif ()
 set(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
 include(third-party)
 # !<< vendor
