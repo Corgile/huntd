@@ -5,7 +5,7 @@
 #ifndef HOUND_PRODUCER_DELIVERY_REPORT_CB_HPP
 #define HOUND_PRODUCER_DELIVERY_REPORT_CB_HPP
 
-#include <rdkafkacpp.h>
+#include <librdkafka/rdkafkacpp.h>
 #include <hound/common/macro.hpp>
 
 // 生产者投递报告回调

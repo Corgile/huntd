@@ -10,7 +10,7 @@
 #include <hound/sink/impl/text_file_sink.hpp>
 #include <hound/sink/impl/json_file_sink.hpp>
 
-#if defined(INCLUDE_KAFKA)
+#if defined(SEND_KAFKA)
 
 #include <hound/sink/impl/kafka/kafka_sink.hpp>
 
@@ -18,7 +18,7 @@
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::OpenLiveHandle(opt);
-#if defined(INCLUDE_KAFKA)
+#if defined(SEND_KAFKA)
   if (opt.send_kafka) {
     mSink.reset(new KafkaSink(opt.kafka_config));
     return;

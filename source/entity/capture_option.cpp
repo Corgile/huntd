@@ -23,7 +23,7 @@ void hd::type::capture_option::print() const {
 
   if (num_packets > 0)  hd_line(CYAN("抓包个数: "), num_packets);
   hd_line(CYAN("\n填充值: "), fill_bit);
-#if defined(INCLUDE_KAFKA) or defined(LIVE_MODE)
+#if defined(SEND_KAFKA) or defined(LIVE_MODE)
   if(send_kafka)        hd_line(CYAN("流超时时间: "), packetTimeout, "秒");
 #endif
   hd_info(CYAN("将每 "), stride, CYAN(" 位一组按"));
@@ -33,7 +33,7 @@ void hd::type::capture_option::print() const {
   hd_line(CYAN("filter: "), filter);
   //@formatter:on
 
-#ifdef INCLUDE_KAFKA
+#ifdef SEND_KAFKA
   if (send_kafka) {
     if (not kafka_config.empty()) {
       hd_line(CYAN("kafka设置:  "), kafka_config);
@@ -43,7 +43,7 @@ void hd::type::capture_option::print() const {
   }
 #endif
 
-#if defined(INCLUDE_KAFKA) || defined(LIVE_MODE)
+#if defined(SEND_KAFKA) || defined(LIVE_MODE)
   if (not device.empty() and live_mode) {
     hd_info(CYAN("采集网卡: "), device);
   }
@@ -63,6 +63,7 @@ void hd::type::capture_option::print() const {
     hd_line(CYAN("输入文件:  "), pcap_file);
   }
 #endif
+  hd_line("");
 }
 
 hd::type::capture_option::~capture_option() {

@@ -182,7 +182,7 @@ static void Doc() {
     << "\t-D, --duration       D秒后结束抓包\n"
     << "\t-F, --filter         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
     << "\t-N, --num-packets    指定抓包的数量\n"
-#ifdef INCLUDE_KAFKA
+#ifdef SEND_KAFKA
     << "\t-L, --min-packets    流的最小packet数量\n"
     << "\t-R, --max-packets    流的最大packet数量\n"
     << "\t-E, --interval       超时时间(新到达的packet距离上一个packet的时间)\n"

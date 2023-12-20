@@ -5,7 +5,7 @@
 #ifndef HOUND_PRODUCER_EVENT_CB_HPP
 #define HOUND_PRODUCER_EVENT_CB_HPP
 
-#include <rdkafkacpp.h>
+#include <librdkafka/rdkafkacpp.h>
 
 // 生产者事件回调函数
 class ProducerEventCb final : public RdKafka::EventCb {

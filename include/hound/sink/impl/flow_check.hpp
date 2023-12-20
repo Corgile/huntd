@@ -5,7 +5,7 @@
 #ifndef HOUND_FLOW_CHECK_HPP
 #define HOUND_FLOW_CHECK_HPP
 
-#include <rdkafkacpp.h>
+#include <librdkafka/rdkafkacpp.h>
 #include <hound/type/hd_flow.hpp>
 #include <hound/common/global.hpp>
 #include <hound/common/macro.hpp>

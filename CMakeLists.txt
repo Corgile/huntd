@@ -3,7 +3,7 @@ project(hound)
 set(CMAKE_CXX_STANDARD 20)
 set(TARGET hd)
 # kafka
-set(SEND_KAFKA CACHE BOOL "是否包含Kafka功能" OFF)
+set(INCLUDE_KAFKA CACHE BOOL "是否包含Kafka功能" OFF)
 # !>> vendor
 set(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
 set(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
@@ -11,44 +11,42 @@ include(third-party)
 # !<< vendor
 
 # !>> 处理编译宏
-# -DBUILD_MODE:STRING=OFFLINE_MODE,LIVE_MODE,BENCHMARK
-string(REGEX MATCHALL [A-Za-z_]+ result ${BUILD_MODE})
+# -DHD_FEATURES:STRING=OFFLINE_MODE,LIVE_MODE,BENCHMARK
+string(REGEX MATCHALL [A-Za-z_]+ FEATURES ${HD_FEATURES})
 list(SORT result COMPARE STRING ORDER ASCENDING)
-foreach (macro ${result})
-    message(STATUS "${BoldWhite}Adding Macro: ${BoldCyan}${macro}${ColorReset}")
-    add_compile_definitions(${macro})
-    if (${macro} STREQUAL "DEAD_MODE")
+foreach (feat ${FEATURES})
+    message(STATUS "${BoldWhite}Adding Macro: ${BoldCyan}${feat}${ColorReset}")
+    add_compile_definitions(${feat})
+    if (${feat} STREQUAL "DEAD_MODE")
         set(TARGET "${TARGET}-dead")
     endif ()
-    if (${macro} STREQUAL "LIVE_MODE")
+    if (${feat} STREQUAL "LIVE_MODE")
         set(TARGET "${TARGET}-live")
     endif ()
-    if (${macro} STREQUAL "BENCHMARK")
+    if (${feat} STREQUAL "BENCHMARK")
         set(TARGET "${TARGET}-bch")
     endif ()
-    if (${macro} STREQUAL "INCLUDE_KAFKA")
+    if (${feat} STREQUAL "SEND_KAFKA")
         set(TARGET "${TARGET}-kfk")
-        set(SEND_KAFKA ON)
+        set(INCLUDE_KAFKA ON)
     endif ()
 endforeach ()
-message(STATUS "${BoldGreen}Build Target:  ${TARGET}${ColorReset}")
+message(STATUS "${BoldGreen}Binary Target:  ${TARGET}${ColorReset}")
 # !<< 处理编译宏
 
+#@formatter:off
 # all public header for all source files
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/yalanting)
-#@formatter:off
 aux_source_directory(source               SOURCE_FILES)
 aux_source_directory(source/parser        SOURCE_FILES)
 aux_source_directory(source/entity        SOURCE_FILES)
 #@formatter:on
 
 add_executable(${TARGET} main.cpp ${SOURCE_FILES})
-#if (${BUILD_MODE} STREQUAL "RELEASE_SCOPE" OR ${BUILD_MODE} STREQUAL "DEBUG_SCOPE")
-if (SEND_KAFKA)
-    target_link_libraries(${TARGET} PRIVATE rdkafka++)
+if (INCLUDE_KAFKA)
+    target_link_libraries(${TARGET} PRIVATE rdkafka rdkafka++)
 endif ()
 target_link_libraries(${TARGET} PRIVATE pcap)
 target_link_libraries(${TARGET} PRIVATE nlohmann_json)
 target_link_libraries(${TARGET} PRIVATE dbg_macro)
-#endif ()

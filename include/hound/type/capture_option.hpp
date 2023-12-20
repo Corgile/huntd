@@ -38,11 +38,11 @@ struct capture_option final {
   std::string filter{};
   std::string output_file{};
 
-#if defined(INCLUDE_KAFKA) || defined(LIVE_MODE)
+#if defined(SEND_KAFKA) || defined(LIVE_MODE)
   int32_t duration{10};
 #endif
 
-#ifdef INCLUDE_KAFKA
+#ifdef SEND_KAFKA
   bool send_kafka{false};
   std::string kafka_config{};
   int32_t min_packets{10};
