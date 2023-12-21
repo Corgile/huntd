@@ -33,9 +33,14 @@ int main(int argc, char* argv[]) {
 #if defined(DEAD_MODE)
   static std::unique_ptr<hd::type::DeadParser> deadParser{nullptr};
 #endif
-  auto handler = [](int signal) {
+  static int ctrlc = 0;
+  auto handler = [](int const signal) {
     if (signal == SIGINT) {
       hd_line(RED("\n[CtrlC] received. 即将退出..."));
+      ctrlc++;
+      if(ctrlc >= 5) {
+        exit(EXIT_FAILURE);
+      }
     }
     if (signal == SIGTERM) {
       hd_line(RED("\n[SIGTERM] received. 即将退出..."));
