@@ -33,12 +33,14 @@ int main(int argc, char* argv[]) {
 #if defined(DEAD_MODE)
   static std::unique_ptr<hd::type::DeadParser> deadParser{nullptr};
 #endif
-  static int ctrlc = 0;
+  static int ctrlc = 0, max__ = 5;
   auto handler = [](int const signal) {
     if (signal == SIGINT) {
-      hd_line(RED("\n[CtrlC] received. 即将退出..."));
-      ctrlc++;
-      if(ctrlc >= 5) {
+      auto const more = max__ - ++ctrlc;
+      if (more > 0) {
+        hd_line(RED("\n再按 "), more, RED(" 次 [Ctrl-C] 退出"));
+      }
+      if (ctrlc >= max__) {
         exit(EXIT_FAILURE);
       }
     }
@@ -69,8 +71,7 @@ int main(int argc, char* argv[]) {
     liveParser = std::make_unique<LiveParser>();
     liveParser->startCapture();
     liveParser->stopCapture();
-  }
-  else
+  } else
 #endif
   {
 #if defined(DEAD_MODE)
