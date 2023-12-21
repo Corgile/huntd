@@ -18,7 +18,9 @@ using namespace RdKafka;
 class kafka_connection {
 private:
   clock_t _aliveTime{};
-  int m_partition{0};            // 分区
+  std::atomic_int mPartionToFlush{0};            // 分区编号
+  int mMaxPartition{0};            // 分区数量
+  std::atomic_bool running{true};
 
   std::unique_ptr<Topic> mTopicPtr{};                  // Topic对象
   std::unique_ptr<Producer> mProducer{};          // Producer对象
@@ -31,11 +33,21 @@ public:
                    std::unique_ptr<Conf> const& kafkaConf,
                    std::unique_ptr<Conf> const& topic) {
     std::string errstr;
-    this->m_partition = conn.partition;
+    this->mMaxPartition = conn.partition;
     auto const _producer{Producer::create(kafkaConf.get(), errstr)};
     auto const _topic{Topic::create(_producer, conn.topic_str, topic.get(), errstr)};
     this->mTopicPtr.reset(_topic);
     this->mProducer.reset(_producer);
+    if (this->mMaxPartition > 1) {
+      int32_t counter = 0;
+      std::thread([&counter, this] {
+        while (running) {
+          std::this_thread::sleep_for(std::chrono::seconds(10));
+          this->mPartionToFlush.store(counter++ % mMaxPartition);
+          counter %= mMaxPartition;
+        }
+      }).detach();
+    } else this->mPartionToFlush = 0;
   }
 
   /**
@@ -45,7 +57,7 @@ public:
   void pushMessage(const std::string& payload, const std::string& _key) const {
     ErrorCode const errorCode = mProducer->produce(
       this->mTopicPtr.get(),
-      this->m_partition,
+      this->mPartionToFlush,
       Producer::RK_MSG_COPY,
       const_cast<char*>(payload.c_str()),
       payload.size(),
@@ -56,7 +68,7 @@ public:
     hd_line(RED("发送失败: "), err2str(errorCode), CYAN(", 长度: "), payload.size());
     // kafka 队列满，等待 5000 ms
     if (errorCode not_eq ERR__QUEUE_FULL) return;
-    mProducer->poll(500);
+    mProducer->poll(5000);
   }
 
   ~kafka_connection() {
@@ -65,8 +77,9 @@ public:
               std::this_thread::get_id(),
               RED(" Waiting for queue len: "),
               mProducer->outq_len());
-      mProducer->flush(1000);
+      mProducer->flush(5000);
     }
+    running.store(false);
   }
 
   /// 刷新连接的起始空闲时刻
