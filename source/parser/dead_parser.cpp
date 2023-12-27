@@ -9,11 +9,6 @@
 #include <hound/sink/impl/json_file_sink.hpp>
 #include <hound/sink/impl/text_file_sink.hpp>
 
-#if defined(BENCHMARK)
-
-#include <hound/type/timer.hpp>
-
-#endif
 
 hd::type::DeadParser::DeadParser() {
   this->mHandle = util::OpenDeadHandle(global::opt, this->mLinkType);
@@ -23,25 +18,27 @@ hd::type::DeadParser::DeadParser() {
   }
   if (global::opt.output_file.ends_with(".json")) {
     mSink.reset(new JsonFileSink(global::opt.output_file));
-  }
-  else {
+  } else {
     mSink.reset(new TextFileSink(global::opt.output_file));
   }
+  this->timer = std::make_unique<Timer>(_timeConsumption_ms_s1, _timeConsumption_ms_s2);
 }
 
 void hd::type::DeadParser::processFile() {
 #if defined(BENCHMARK)
-  Timer timer(_timeConsumption_ms);
+
 #endif
   using namespace hd::global;
   for (int i = 0; i < opt.workers; ++i) {
     std::thread(&DeadParser::consumer_job, this).detach();
   }
-  pcap_loop(mHandle, opt.num_packets, deadHandler, reinterpret_cast<byte_t*>(this));
+  timer->start();
+  pcap_loop(mHandle, opt.num_packets, deadHandler, reinterpret_cast<byte_t *>(this));
+  timer->stop1();
 }
 
-void hd::type::DeadParser::deadHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
-  auto const _this{reinterpret_cast<DeadParser*>(user_data)};
+void hd::type::DeadParser::deadHandler(byte_t *user_data, const pcap_pkthdr *pkthdr, const byte_t *packet) {
+  auto const _this{reinterpret_cast<DeadParser *>(user_data)};
   std::unique_lock _accessToQueue(_this->mQueueLock);
   _this->mPacketQueue.push({
   pkthdr,
@@ -82,18 +79,25 @@ hd::type::DeadParser::~DeadParser() {
   }
   /// 再控制游离线程停止访问主线程的资源
   keepRunning.store(false);
+  cv_consumer.notify_all();
 #if defined(BENCHMARK)
   using namespace global;
-  hd_line(CYAN("num_captured_packet = "), num_captured_packet.load());
-  hd_line(CYAN("num_dropped_packets = "), num_dropped_packets.load());
-  hd_line(CYAN("num_consumed_packet = "), num_consumed_packet.load());
-  hd_line(CYAN("num_written_csv = "), num_written_csv.load());
-  hd_line(CYAN("_timeConsumption_ms = "), _timeConsumption_ms);
+  timer->stop2();
+  // hd_line(CYAN("num_captured_packet = "), num_captured_packet.load());
+  // hd_line(CYAN("num_dropped_packets = "), num_dropped_packets.load());
+  // hd_line(CYAN("num_consumed_packet = "), num_consumed_packet.load());
+  std::cout << "File Name: " << opt.pcap_file
+    << ", Packet Count: " << num_consumed_packet.load()
+    << ", Time Consumption1: " << _timeConsumption_ms_s1 << " ms"
+    << ", Time Consumption2: " << _timeConsumption_ms_s2 << " ms"
+    << std::endl;
+  // hd_line(CYAN("num_written_csv = "), num_written_csv.load());
+  // hd_line(CYAN("_timeConsumption_ms = "), _timeConsumption_ms);
 #endif//- #if defined(BENCHMARK)
   hd_debug(this->mPacketQueue.size());
   ///- 最好不要强制exit(0), 因为还有worker在死等。
   // exit(EXIT_SUCCESS);
-  cv_consumer.notify_all();
+
 }
 
 #endif

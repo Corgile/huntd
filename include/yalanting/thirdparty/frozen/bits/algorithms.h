@@ -118,7 +118,7 @@ constexpr Iterator partition(Iterator left, Iterator right,
   for (auto it = left; 0 < right - it; ++it) {
     if (compare(*it, value)) {
       cswap(*it, *left);
-      left++;
+      ++left;
     }
   }
   cswap(*right, *left);
@@ -136,9 +136,9 @@ constexpr void quicksort(Iterator left, Iterator right,
 }
 
 template<typename T, std::size_t N, class Compare>
-constexpr bits::carray<T, N> quicksort(bits::carray<T, N> const& array,
-                                       Compare const& compare) {
-  bits::carray<T, N> res = array;
+constexpr carray<T, N> quicksort(carray<T, N> const& array,
+                                 Compare const& compare) {
+  carray<T, N> res = array;
   quicksort(res.begin(), res.end() - 1, compare);
   return res;
 }
@@ -152,14 +152,14 @@ struct LowerBound {
       : value_(value), compare_(compare) {}
 
   template<class ForwardIt>
-  inline constexpr ForwardIt doit_fast(ForwardIt first,
+  static constexpr ForwardIt doit_fast(ForwardIt first,
                                        std::integral_constant<std::size_t, 0>) {
     return first;
   }
 
   template<class ForwardIt, std::size_t N>
-  inline constexpr ForwardIt doit_fast(ForwardIt first,
-                                       std::integral_constant<std::size_t, N>) {
+  constexpr ForwardIt doit_fast(ForwardIt first,
+                                std::integral_constant<std::size_t, N>) {
     auto constexpr step = N / 2;
     static_assert(N / 2 == N - N / 2 - 1, "power of two minus 1");
     auto it = first + step;
@@ -168,16 +168,16 @@ struct LowerBound {
   }
 
   template<class ForwardIt, std::size_t N>
-  inline constexpr ForwardIt doitfirst(ForwardIt first,
-                                       std::integral_constant<std::size_t, N>,
-                                       std::integral_constant<bool, true>) {
+  constexpr ForwardIt doitfirst(ForwardIt first,
+                                std::integral_constant<std::size_t, N>,
+                                std::integral_constant<bool, true>) {
     return doit_fast(first, std::integral_constant<std::size_t, N>{});
   }
 
   template<class ForwardIt, std::size_t N>
-  inline constexpr ForwardIt doitfirst(ForwardIt first,
-                                       std::integral_constant<std::size_t, N>,
-                                       std::integral_constant<bool, false>) {
+  constexpr ForwardIt doitfirst(ForwardIt first,
+                                std::integral_constant<std::size_t, N>,
+                                std::integral_constant<bool, false>) {
     auto constexpr next_power = next_highest_power_of_two(N);
     auto constexpr next_start = next_power / 2 - 1;
     auto it = first + next_start;
@@ -193,9 +193,9 @@ struct LowerBound {
   }
 
   template<class ForwardIt>
-  inline constexpr ForwardIt doitfirst(ForwardIt first,
-                                       std::integral_constant<std::size_t, 1>,
-                                       std::integral_constant<bool, false>) {
+  constexpr ForwardIt doitfirst(ForwardIt first,
+                                std::integral_constant<std::size_t, 1>,
+                                std::integral_constant<bool, false>) {
     return doit_fast(first, std::integral_constant<std::size_t, 1>{});
   }
 };

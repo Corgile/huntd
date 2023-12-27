@@ -28,7 +28,6 @@
 #include <thirdparty/frozen/bits/defines.h>
 #include <thirdparty/frozen/bits/elsa.h>
 #include <thirdparty/frozen/bits/hash_string.h>
-#include <thirdparty/frozen/bits/version.h>
 
 #ifdef FROZEN_LETITGO_HAS_STRING_VIEW
 

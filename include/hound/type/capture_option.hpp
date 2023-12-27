@@ -37,17 +37,9 @@ struct capture_option final {
   std::string device{};
   std::string filter{};
   std::string output_file{};
-
-#if defined(SEND_KAFKA) || defined(LIVE_MODE)
-  int32_t duration{10};
-#endif
-
-#ifdef SEND_KAFKA
-  bool send_kafka{false};
-  std::string kafka_config{};
   int32_t min_packets{10};
   int32_t max_packets{100};
-#endif
+
 
 #ifdef DEAD_MODE
   /// mode
@@ -58,7 +50,14 @@ struct capture_option final {
 
 #ifdef LIVE_MODE
   bool live_mode{true};
+  int32_t duration{10};
+#ifdef SEND_KAFKA
+  bool send_kafka{false};
+  std::string kafka_config{};
 #endif
+#endif
+
+
 
 public:
   void print() const;

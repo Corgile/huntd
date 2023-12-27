@@ -32,7 +32,7 @@
 
 #else
 
-  #define constexpr_assert(cond, msg) do{assert(cond&& msg);}while(0)
+#define constexpr_assert(cond, msg) do{assert(cond&& msg);}while(0)
 #endif
 
 #endif

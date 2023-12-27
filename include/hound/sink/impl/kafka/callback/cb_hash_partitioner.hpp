@@ -27,7 +27,7 @@ public:
 
 private:
   // 自定义哈希函数
-  static unsigned int generate_hash(const char* str, size_t len) {
+  static unsigned int generate_hash(const char* str, const size_t len) {
     unsigned int hash = 5381;
     for (size_t i = 0; i < len; i++) {
       hash = ((hash << 5) + hash) + str[i];

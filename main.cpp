@@ -21,7 +21,7 @@ std::atomic<int32_t> num_written_csv = 0;
 #endif
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   using namespace hd::global;
   using namespace hd::type;
   hd::util::ParseOptions(opt, argc, argv);

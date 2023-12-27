@@ -3,7 +3,7 @@ project(hound)
 set(CMAKE_CXX_STANDARD 20)
 set(TARGET hd)
 # kafka
-set(INCLUDE_KAFKA CACHE BOOL "是否包含Kafka功能" OFF)
+set(INCLUDE_KAFKA OFF)
 # !>> vendor
 set(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
 set(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
@@ -45,6 +45,7 @@ aux_source_directory(source/entity        SOURCE_FILES)
 
 add_executable(${TARGET} main.cpp ${SOURCE_FILES})
 if (INCLUDE_KAFKA)
+    message(STATUS "${BoldGreen}With librdkafka${ColorReset}")
     target_link_libraries(${TARGET} PRIVATE rdkafka rdkafka++)
 endif ()
 target_link_libraries(${TARGET} PRIVATE pcap)

@@ -21,55 +21,68 @@ using namespace hd::type;
 inline char ByteBuffer[PCAP_ERRBUF_SIZE];
 
 #pragma region ShortAndLongOptions
-static char const* shortopts = "J:d:D:F:f:N:K:P:S:I:L:R:E:W:p:Cre4ui6whTtVU";
 static option longopts[] = {
-    /// specify which network interface to capture @formatter:off
-			{"device",      required_argument, nullptr, 'd'},
-			{"workers",     required_argument, nullptr, 'J'},
-			{"duration",    required_argument, nullptr, 'D'},
-			/// custom filter for libpcap
-			{"filter",      required_argument, nullptr, 'F'},
-			{"fill"  ,      required_argument, nullptr, 'f'},
-			{"num-packets", required_argument, nullptr, 'N'},
-			/// min packets
-			{"min",         required_argument, nullptr, 'L'},
-			/// max packets
-			{"max",         required_argument, nullptr, 'R'},
-			/// threshold seconds(to determine whether to send)
-			{"interval",    required_argument, nullptr, 'E'},
-			{"kafka",       required_argument, nullptr, 'K'},
-			/// pcap file path, required when processing a pcapng file.
-			{"pcap-file",   required_argument, nullptr, 'P'},
-			/// num of bits to convert as an integer
-			{"stride",      required_argument, nullptr, 'S'},
-			/// specify one of 0~5 integer as your flowId
-			/// {"index",       required_argument, nullptr, 'I'},
-			/// dump output into a csv_path file
-			{"write",       required_argument, nullptr, 'W'},
-			{"payload",     required_argument, nullptr, 'p'},
-			/// no argument
-			{"radiotap",    no_argument,       nullptr, 'r'},
-			{"wlan",        no_argument,       nullptr, 'w'},
-			{"eth",         no_argument,       nullptr, 'e'},
-			{"ipv4",        no_argument,       nullptr, '4'},
-			{"ipv6",        no_argument,       nullptr, '6'},
-			{"tcp",         no_argument,       nullptr, 't'},
-			{"udp",         no_argument,       nullptr, 'u'},
-			{"icmp",        no_argument,       nullptr, 'i'},
-			{"help",        no_argument,       nullptr, 'h'},
-			{"timestamp",   no_argument,       nullptr, 'T'},
-			{"caplen",      no_argument,       nullptr, 'C'},
-			{"verbose",     no_argument,       nullptr, 'V'},
-			{"unsigned",     no_argument,       nullptr, 'U'},
-			{nullptr, 0,                       nullptr, 0}};
+/// specify which network interface to capture
+{"device", required_argument, nullptr, 'd'},
+{"workers", required_argument, nullptr, 'J'},
+{"duration", required_argument, nullptr, 'D'},
+/// custom filter for libpcap
+{"filter", required_argument, nullptr, 'F'},
+{"fill", required_argument, nullptr, 'f'},
+{"num-packets", required_argument, nullptr, 'N'},
+/// min packets
+{"min", required_argument, nullptr, 'L'},
+/// max packets
+{"max", required_argument, nullptr, 'R'},
+/// threshold seconds(to determine whether to send)
+{"interval", required_argument, nullptr, 'E'},
+{"kafka", required_argument, nullptr, 'K'},
+/// pcap file path, required when processing a pcapng file.
+{"pcap-file", required_argument, nullptr, 'P'},
+/// num of bits to convert as an integer
+{"stride", required_argument, nullptr, 'S'},
+/// dump output into a csv_path file
+{"write", required_argument, nullptr, 'W'},
+{"payload", required_argument, nullptr, 'p'},
+/// no argument
+#if defined(HD_FUTURE_SUPPORT)
+    {"radiotap",    no_argument,       nullptr, 'r'},
+    {"wlan",        no_argument,       nullptr, 'w'},
+    {"eth",         no_argument,       nullptr, 'e'},
+    {"ipv6",        no_argument,       nullptr, '6'},
+    {"icmp",        no_argument,       nullptr, 'i'},
+#endif
+{"ipv4", no_argument, nullptr, '4'},
+{"tcp", no_argument, nullptr, 't'},
+{"udp", no_argument, nullptr, 'u'},
+{"help", no_argument, nullptr, 'h'},
+{"timestamp", no_argument, nullptr, 'T'},
+{"caplen", no_argument, nullptr, 'C'},
+{"verbose", no_argument, nullptr, 'V'},
+{"unsigned", no_argument, nullptr, 'U'},
+{nullptr, 0, nullptr, 0}
+};
+static char const* shortopts = "J:"
+#if defined(LIVE_MODE)
+  "d:D:"
+#if defined(SEND_KAFKA)
+  "K:E:"
+#endif
+#endif
+#if defined(DEAD_MODE)
+  "P:W:"
+#endif
+#if defined(HD_FUTURE_SUPPORT)
+  "rwe6i"
+#endif
+  "F:f:N:S:L:R:p:C4uhTtVU";
 #pragma endregion ShortAndLongOptions //@formatter:on
 
 static void BuildFilter(capture_option& opt) {
   bool config_filter_set{false};
   if (not opt.filter.empty()) {
     opt.filter.append(" and(");
-  }
-  else { opt.include_ip4 = true; }
+  } else { opt.include_ip4 = true; }
 
   if (opt.include_tcp or opt.include_udp or opt.include_icmp or opt.include_vlan) {
     opt.filter.append("(");
@@ -91,8 +104,7 @@ static void BuildFilter(capture_option& opt) {
   }
   if (config_filter_set) {
     opt.filter.append("or");
-  }
-  else {
+  } else {
     opt.filter.append(")");
   }
   opt.filter.append("(vlan and(tcp or udp)))");
@@ -107,16 +119,17 @@ static void SetFilter(pcap_t* handle, std::string& device) {
   if (opt.filter.empty() or handle == nullptr) { return; }
   bpf_u_int32 net{0}, mask{0};
   bpf_program fp{};
-
+#if defined(LIVE_MODE)
   if (opt.live_mode and not device.empty()) {
     if (pcap_lookupnet(device.c_str(), &net, &mask, ByteBuffer) == -1) {
       hd_line("获取设备掩码失败: ", device, ByteBuffer);
       exit(EXIT_FAILURE);
     }
   }
+#endif
   hd_debug(opt.filter);
   if (pcap_compile(handle, &fp, opt.filter.c_str(), 0, net) == -1) {
-    hd_line("解析 Filter 失败: ", pcap_geterr(handle));
+    hd_line("解析 Filter 失败: ", opt.filter, "\n", pcap_geterr(handle));
     exit(EXIT_FAILURE);
   }
 
@@ -172,41 +185,42 @@ static pcap_t* OpenDeadHandle(capture_option& option, uint32_t& link_type) {
   link_type = pcap_datalink(handle);
   return handle;
 }
-#endif
+#endif // DEAD_MODE
 
 static void Doc() {
-  std::cout << "\n\t选项: [d:D:F:N:L:R:E:K:P:S:W:p:re4ui6whTt]\n\n";
+  std::cout << "\t选项: " << shortopts << '\n';
   std::cout
-    << "\t-d, --device         哪一个网卡\n"
-    << "\t-J, --workers        哪一个网卡\n"
+#if defined(LIVE_MODE)
     << "\t-D, --duration       D秒后结束抓包\n"
-    << "\t-F, --filter         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
+    << "\t-d, --device         哪一个网卡\n"
     << "\t-N, --num-packets    指定抓包的数量\n"
 #ifdef SEND_KAFKA
-    << "\t-L, --min-packets    流的最小packet数量\n"
-    << "\t-R, --max-packets    流的最大packet数量\n"
     << "\t-E, --interval       超时时间(新到达的packet距离上一个packet的时间)\n"
     << "\t-K, --kafka-config   kafka 配置文件路径\n"
+#endif//SEND_KAFKA
 #endif
+    << "\t-J, --workers        处理流量包的线程数\n"
+    << "\t-F, --filter         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
+    << "\t-f, --fill           null字节填充值\n"
+    << "\t-L, --min-packets    合并成流/json的时候，指定流的最 小 packet数量\n"
+    << "\t-R, --max-packets    合并成流/json的时候，指定流的最 大 packet数量\n"
+#if defined(DEAD_MODE)
     << "\t-P, --pcap-file      pcap文件路径, 处理离线 pcap,pcapng 文件\n"
     << "\t-W, --write          输出到文件, 需指定输出文件路径\n"
-    // << "\t-I, --index          指定要输出的列, 可选:\n"
-    // << "                                    0: 源IP \n"
-    // << "                                    1: 目的IP\n"
-    // << "                                    2: 源端口\n"
-    // << "                                    3: 目的端口\n"
-    // << "                                    4: 五元组(default)\n"
-    << "\t-S, --stride         将 S 位二进制串转换为 uint 数值(default 8)\n"
-    << "\t-r, --radiotap       包含 radiotap 报文(currently not supported)\n"
-    << "\t-w, --wlan           包含 wlan 报文(currently not supported)\n"
-    << "\t-e, --eth            包含 eth 报文\n"
+#endif//DEAD_MODE
+    << "\t-S, --stride         将 S 位二进制串转换为 uint 数值(默认 8)\n"
     << "\t-4, --ipv4           包含 ipv4 报文\n"
-    << "\t-6, --ipv6           包含 ipv6 报文(currently not supported)\n"
     << "\t-t, --tcp            包含 tcp 报文\n"
     << "\t-T, --timestamp      包含时间戳(秒,毫秒)\n"
     << "\t-u, --udp            包含 udp 报文\n"
-    << "\t-i, --icmp           包含 icmp 报文(currently not in plan)\n"
     << "\t-p, --payload        包含 n 字节的 payload\n"
+#if defined(HD_FUTURE_SUPPORT)
+    << "\t-r, --radiotap       包含 radiotap 报文(currently not supported)\n"
+    << "\t-w, --wlan           包含 wlan 报文(currently not supported)\n"
+    << "\t-e, --eth            包含 eth 报文\n"
+    << "\t-6, --ipv6           包含 ipv6 报文(currently not supported)\n"
+    << "\t-i, --icmp           包含 icmp 报文(currently not in plan)\n"
+#endif//HD_FUTURE_SUPPORT
     << "\t-h, --help           用法帮助\n"
     << std::endl;
 }
@@ -216,35 +230,31 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
   opterr = 0;
   while ((option = getopt_long(argc, argv, shortopts, longopts, &longind)) not_eq -1) {
     switch (option) {
-    case 'd':
-      arguments.device = optarg;
+    case 'd': arguments.device = optarg;
       break;
-    case 'C':
-      arguments.caplen = true;
+    case 'C': arguments.caplen = true;
       break;
-    case 'J':
-      j = std::stoi(optarg);
+    case 'J': j = std::stoi(optarg);
       if (j < 1) {
         hd_line("worker 必须 >= 1");
         exit(EXIT_FAILURE);
       }
       arguments.workers = j;
       break;
-    case 'D':
-      arguments.duration = std::stoi(optarg);
+#if defined(LIVE_MODE)
+    case 'D': arguments.duration = std::stoi(optarg);
       break;
-    case 'F':
-      arguments.filter = optarg;
+#endif
+    case 'F': arguments.filter = optarg;
       break;
     case 'f':
       // try-except: fill = std::stoi(optarg);
       arguments.fill_bit = std::stoi(optarg);
       break;
-    case 'N':
-      arguments.num_packets = std::stoi(optarg);
+    case 'N': arguments.num_packets = std::stoi(optarg);
       break;
-    case 'K':
-      arguments.send_kafka = true;
+#if defined(SEND_KAFKA) and defined(LIVE_MODE)
+    case 'K': arguments.send_kafka = true;
       arguments.kafka_config = optarg;
 #ifdef DEAD_MODE
       arguments.offline_mode = false;
@@ -254,11 +264,10 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
-    case 'p':
-      arguments.payload = std::stoi(optarg);
+#endif
+    case 'p': arguments.payload = std::stoi(optarg);
       break;
-    case 'S':
-      arguments.stride = std::stoi(optarg);
+    case 'S': arguments.stride = std::stoi(optarg);
       if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
         arguments.stride not_eq 32 and arguments.stride not_eq 64) {
         hd_line("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
@@ -272,14 +281,11 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
     //     exit(EXIT_FAILURE);
     //   }
     //   break;
-    case 'L':
-      arguments.min_packets = std::stoi(optarg);
+    case 'L': arguments.min_packets = std::stoi(optarg);
       break;
-    case 'R':
-      arguments.max_packets = std::stoi(optarg);
+    case 'R': arguments.max_packets = std::stoi(optarg);
       break;
-    case 'E':
-      arguments.packetTimeout = std::stoi(optarg);
+    case 'E': arguments.packetTimeout = std::stoi(optarg);
       break;
 
 #ifdef DEAD_MODE
@@ -293,7 +299,9 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
       break;
     case 'P':
       arguments.offline_mode = true;
+#if defined(LIVE_MODE)
       arguments.live_mode = false;
+#endif
       arguments.pcap_file = optarg;
       if (arguments.pcap_file.empty()) {
         hd_line("-P, --pcap-file 缺少值");
@@ -302,47 +310,34 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
       break;
 #endif
 
-    case 'r':
-      arguments.include_radiotap = true;
+    case 'r': arguments.include_radiotap = true;
       break;
-    case 'e':
-      arguments.include_eth = true;
+    case 'e': arguments.include_eth = true;
       break;
-    case '4':
-      arguments.include_ip4 = true;
+    case '4': arguments.include_ip4 = true;
       break;
-    case 'u':
-      arguments.include_udp = true;
+    case 'u': arguments.include_udp = true;
       break;
-    case 'i':
-      arguments.include_icmp = true;
+    case 'i': arguments.include_icmp = true;
       break;
-    case '6':
-      arguments.include_ipv6 = true;
+    case '6': arguments.include_ipv6 = true;
       break;
-    case 'w':
-      arguments.include_wlan = true;
+    case 'w': arguments.include_wlan = true;
       break;
-    case 'h':
-      hd::util::Doc();
+    case 'h': hd::util::Doc();
       exit(EXIT_SUCCESS);
-    case 't':
-      arguments.include_tcp = true;
+    case 't': arguments.include_tcp = true;
       break;
-    case 'T':
-      arguments.timestamp = true;
+    case 'T': arguments.timestamp = true;
       break;
-    case 'V':
-      arguments.verbose = true;
+    case 'V': arguments.verbose = true;
       break;
-    case 'U':
-      arguments.unsign = true;
+    case 'U': arguments.unsign = true;
       break;
     case '?':
       hd_line("选项 ", '-', char(optopt), (" 的参数是必需的"));
       exit(EXIT_FAILURE);
-    default:
-      break;
+    default: break;
     }
   }
 }

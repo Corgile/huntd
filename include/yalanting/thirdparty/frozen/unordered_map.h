@@ -27,11 +27,9 @@
 #include <tuple>
 
 #include "thirdparty/frozen/bits/basic_types.h"
-#include "thirdparty/frozen/bits/constexpr_assert.h"
 #include "thirdparty/frozen/bits/elsa.h"
 #include "thirdparty/frozen/bits/exceptions.h"
 #include "thirdparty/frozen/bits/pmh.h"
-#include "thirdparty/frozen/bits/version.h"
 #include "thirdparty/frozen/random.h"
 
 namespace frozen {
@@ -117,11 +115,11 @@ public:
   constexpr const_iterator cend() const { return items_.cend(); }
 
   /* capacity */
-  constexpr bool empty() const { return !N; }
+  static constexpr bool empty() { return !N; }
 
-  constexpr size_type size() const { return N; }
+  static constexpr size_type size() { return N; }
 
-  constexpr size_type max_size() const { return N; }
+  static constexpr size_type max_size() { return N; }
 
   /* lookup */
   template<class KeyType, class Hasher, class Equal>

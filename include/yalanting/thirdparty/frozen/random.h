@@ -27,12 +27,11 @@
 #include <type_traits>
 
 #include "thirdparty/frozen/bits/algorithms.h"
-#include "thirdparty/frozen/bits/version.h"
 
 namespace frozen {
 template<class UIntType, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine {
-  static_assert(std::is_unsigned<UIntType>::value,
+  static_assert(std::is_unsigned_v<UIntType>,
                 "UIntType must be an unsigned integral type");
 
   template<class T>

@@ -10,6 +10,11 @@
 #include <hound/type/raw_packet_info.hpp>
 #include <hound/sink/base_sink.hpp>
 
+#if defined(BENCHMARK)
+
+#include <hound/type/timer.hpp>
+
+#endif
 namespace hd::type {
 class DeadParser final {
 public:
@@ -20,20 +25,22 @@ public:
   ~DeadParser();
 
 private:
-  static void deadHandler(u_char*, const pcap_pkthdr*, const u_char*);
+  static void deadHandler(u_char *, const pcap_pkthdr *, const u_char *);
 
   void consumer_job();
 
 private:
-  pcap_t* mHandle{nullptr};
+  pcap_t *mHandle{nullptr};
   uint32_t mLinkType{};
   std::queue<raw_packet_info> mPacketQueue;
   std::atomic<bool> keepRunning{true};
   std::shared_ptr<BaseSink> mSink;
-  std::condition_variable cv_producer;      // 生产者条件变量
-  std::condition_variable cv_consumer;      // 消费者条件变量
+  std::condition_variable cv_producer; // 生产者条件变量
+  std::condition_variable cv_consumer; // 消费者条件变量
   mutable std::mutex mQueueLock;
-  double _timeConsumption_ms = 0.;
+  double _timeConsumption_ms_s1 = 0.;
+  double _timeConsumption_ms_s2 = 0.;
+  std::unique_ptr<Timer> timer;
 };
 }
 
