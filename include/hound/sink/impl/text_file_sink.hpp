@@ -18,8 +18,10 @@ namespace fs = std::filesystem;
 class TextFileSink : public BaseSink {
 private:
   SyncedStream<std::ofstream> mOutFile;
+
 public:
-  explicit TextFileSink(const std::string& fileName) : mOutFile(fileName, std::ios::out) {
+  explicit TextFileSink(const std::string& fileName) :
+    mOutFile(fileName, std::ios::out) {
     hd_debug(__PRETTY_FUNCTION__);
     auto parent = absolute(fs::path(fileName)).parent_path();
     if (not exists(parent)) {
@@ -41,9 +43,7 @@ public:
     std::string buffer;
     this->fillCsvBuffer(data, buffer);
     this->mOutFile << std::move(buffer);
-#if defined(BENCHMARK)
     ++global::num_written_csv;
-#endif //BENCHMARK
   }
 };
 } // entity

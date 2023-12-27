@@ -13,8 +13,6 @@ struct capture_option final {
   explicit capture_option() = default;
 
   /// proto filter
-  bool include_radiotap{false};
-  bool include_wlan{false};
   bool include_eth{false};
   bool include_ip4{true};
   bool include_ipv6{false};
@@ -35,31 +33,23 @@ struct capture_option final {
   int32_t stride{8};
   int32_t workers{1};
   std::string device{};
-  std::string filter{};
+  std::string filter{"(tcp or udp)"};
   std::string output_file{};
   int32_t min_packets{10};
   int32_t max_packets{100};
 
-
-#ifdef DEAD_MODE
   /// mode
   bool write_file{false};
-  bool offline_mode{false};
   std::string pcap_file{};
-#endif
-
-#ifdef LIVE_MODE
-  bool live_mode{true};
-  int32_t duration{10};
-#ifdef SEND_KAFKA
-  bool send_kafka{false};
-  std::string kafka_config{};
-#endif
-#endif
-
-
 
 public:
+  // void set_eth();
+  void set_ipv4();
+  // void set_ipv6();
+  void set_tcp();
+  void set_udp();
+  // void set_icmp();
+  // void set_vlan();
   void print() const;
 
   ~capture_option();

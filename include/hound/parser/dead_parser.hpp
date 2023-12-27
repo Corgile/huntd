@@ -9,12 +9,8 @@
 #include <condition_variable>
 #include <hound/type/raw_packet_info.hpp>
 #include <hound/sink/base_sink.hpp>
-
-#if defined(BENCHMARK)
-
 #include <hound/type/timer.hpp>
 
-#endif
 namespace hd::type {
 class DeadParser final {
 public:
@@ -25,12 +21,12 @@ public:
   ~DeadParser();
 
 private:
-  static void deadHandler(u_char *, const pcap_pkthdr *, const u_char *);
+  static void deadHandler(u_char*, const pcap_pkthdr*, const u_char*);
 
   void consumer_job();
 
 private:
-  pcap_t *mHandle{nullptr};
+  pcap_t* mHandle{nullptr};
   uint32_t mLinkType{};
   std::queue<raw_packet_info> mPacketQueue;
   std::atomic<bool> keepRunning{true};
