@@ -63,8 +63,8 @@ private:
     char buffer[22];
     for (; i < _availableFields; ++i) {
       const uint64_t w = (i & r) << n;
-      const uint64_t byteVal = (b << w & p[i >> s]) >> w;//45 00   05 dc a9 93   20 00
-      std::sprintf(buffer, "%ld,", byteVal);
+      const uint64_t _val = (b << w & p[i >> s]) >> w;//45 00   05 dc a9 93   20 00
+      std::sprintf(buffer, "%ld,", _val);
       refout.append(buffer);
     }
     for (; i < _wantedFileds << 3 >> n; ++i) {
