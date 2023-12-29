@@ -13,20 +13,16 @@ struct capture_option final {
   explicit capture_option() = default;
 
   /// proto filter
-  bool include_eth{false};
   bool include_ip4{true};
-  bool include_ipv6{false};
   bool include_tcp{true};
   bool include_udp{true};
-  bool include_icmp{false};
-  bool include_vlan{false};
   /// config
   int32_t payload{20};
   int32_t num_packets{-1};
   int32_t packetTimeout{20};
   bool timestamp{false};
   bool verbose{false};
-  bool unsign{true};
+  bool unsign{false};
   bool caplen{true};
   int32_t fill_bit{0};
 
@@ -43,13 +39,6 @@ struct capture_option final {
   std::string pcap_file{};
 
 public:
-  // void set_eth();
-  void set_ipv4();
-  // void set_ipv6();
-  void set_tcp();
-  void set_udp();
-  // void set_icmp();
-  // void set_vlan();
   void print() const;
 
   ~capture_option();

@@ -35,7 +35,8 @@ void hd::type::DeadParser::processFile() {
 void hd::type::DeadParser::deadHandler(byte_t* user_data, const pcap_pkthdr* pkthdr, const byte_t* packet) {
   auto const _this{reinterpret_cast<DeadParser*>(user_data)};
   std::unique_lock _accessToQueue(_this->mQueueLock);
-  _this->mPacketQueue.push({pkthdr,packet,util::min<int>(global::opt.payload + 128, static_cast<int>(pkthdr->caplen))});
+  _this->mPacketQueue.push(
+    {pkthdr, packet, util::min<int>(global::opt.payload + 128, static_cast<int>(pkthdr->caplen))});
   _accessToQueue.unlock();
   _this->cv_consumer.notify_all();
   ++global::num_captured_packet;
@@ -53,7 +54,10 @@ void hd::type::DeadParser::consumer_job() {
     raw_packet_info packetInfo{this->mPacketQueue.front()};
     this->mPacketQueue.pop();
     lock.unlock();
-    cv_producer.notify_one();
+    {
+      std::scoped_lock ___a(mProdLock);
+      cv_producer.notify_one();
+    }
     mSink->consumeData({packetInfo});
     ++global::num_consumed_packet;
   }

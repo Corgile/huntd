@@ -108,15 +108,12 @@ static pcap_t* OpenLiveHandle(capture_option& option) {
 }
 
 static pcap_t* OpenDeadHandle(const capture_option& option, uint32_t& link_type) {
-  //using offline = pcap_t* (*)(const char*, u_int, char*);
-  //offline open_offline{pcap_open_offline_with_tstamp_precision};
   using offline = pcap_t* (*)(const char*, char*);
   offline const open_offline{pcap_open_offline};
   if (not fs::exists(option.pcap_file)) {
     hd_line("无法打开文件 ", option.pcap_file);
     exit(EXIT_FAILURE);
   }
-  //auto handle{open_offline(option.pcap_file.c_str(), PCAP_TSTAMP_PRECISION_NANO, hd::util::error_buffer)};
   auto const handle{open_offline(option.pcap_file.c_str(), ByteBuffer)};
   SetFilter(handle);
   link_type = pcap_datalink(handle);
@@ -199,7 +196,7 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
       }
       break;
     case '?':
-      hd_line("选项 ", '-', static_cast<char>(optopt), " 的参数是必需的");
+      hd_line("选项 ", '-', static_cast<char>(optopt), ":" RED(" 语法错误"));
       hd_line("使用 -h, --help 查看使用方法");
       exit(EXIT_FAILURE);
     case 'h': Doc();
