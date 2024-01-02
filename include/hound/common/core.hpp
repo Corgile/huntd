@@ -21,16 +21,18 @@ using namespace hd::global;
 
 class util {
 public:
-  template <int32_t PadSize = 0>
+  template <int32_t PadBytes = 0>
   static void fill(bool const condition, const ByteArray& rawData, std::string& buffer) {
     if (not condition) return;
-    if constexpr (PadSize == 0) { // payload
-      __fill(opt.stride, opt.payload, rawData, buffer);
-    } else __fill(opt.stride, PadSize, rawData, buffer);
+    if (opt.stride <= 0 or opt.stride & opt.stride - 1) return;
+    ___fill(opt.stride, PadBytes, rawData, buffer);
+    if constexpr (PadBytes == 0) { // payload
+      ___fill(opt.stride, opt.payload, rawData, buffer);
+    } else ___fill(opt.stride, PadBytes, rawData, buffer);
   }
 
 private:
-  static constexpr uint64_t log2(int v) {
+  static uint64_t log2(int v) {
     int n = 0;
     while (v > 1) {
       v >>= 1;
@@ -39,8 +41,7 @@ private:
     return n;
   }
 
-  template <int width>
-  static constexpr uint64_t get_buff() {
+  static uint64_t get_ff(const int width) {
     uint64_t buff = 1;
     for (int i = 0; i < width - 1; ++i) {
       buff <<= 1;
@@ -50,44 +51,23 @@ private:
     return buff;
   }
 
-  template <int width>
-  static void ___fill(int const _wantedFileds, const ByteArray& raw, std::string& refout) {
+  static void ___fill(int const width, int const _exceptedBytes, const ByteArray& raw, std::string& refout) {
     int i = 0;
     uint64_t const* p = reinterpret_cast<uint64_t*>(raw.data);
-    constexpr uint64_t n = log2(width);
-    const int _availableFields = raw.byteLen << 3 >> n;
-    constexpr uint64_t b = get_buff<width>();
-    constexpr uint64_t r = (64 >> n) - 1;
-    constexpr uint64_t s = log2(64 >> n);
+    uint64_t const n = log2(width);
+    uint64_t const s = log2(64 >> n);
+    uint64_t const r = (64 >> n) - 1;
+    uint64_t const f = get_ff(width);
 
     char buffer[22];
-    for (; i < _availableFields; ++i) {
+    for (; i < raw.byteLen << 3 >> n; ++i) {
       const uint64_t w = (i & r) << n;
-      const uint64_t _val = (b << w & p[i >> s]) >> w;//45 00   05 dc a9 93   20 00
+      const uint64_t _val = (f << w & p[i >> s]) >> w;//45 00   05 dc a9 93   20 00
       std::sprintf(buffer, "%ld,", _val);
       refout.append(buffer);
     }
-    for (; i < _wantedFileds << 3 >> n; ++i) {
+    for (; i < _exceptedBytes << 3 >> n; ++i) {
       refout.append(fillBit);
-    }
-  }
-
-  static void __fill(const int stride, const int PadSize, const ByteArray& rawData, std::string& buffer) {
-    switch (stride) {
-    case 1: ___fill<1>(PadSize, rawData, buffer);
-      break;
-    case 2: ___fill<2>(PadSize, rawData, buffer);
-      break;
-    case 4: ___fill<4>(PadSize, rawData, buffer);
-      break;
-    case 8: ___fill<8>(PadSize, rawData, buffer);
-      break;
-    case 16: ___fill<16>(PadSize, rawData, buffer);
-      break;
-    case 32: ___fill<32>(PadSize, rawData, buffer);
-      break;
-    case 64: ___fill<64>(PadSize, rawData, buffer);
-    default: /* handle unsupported stride sizes */break;
     }
   }
 };
