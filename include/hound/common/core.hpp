@@ -10,11 +10,6 @@
 #include <hound/common/global.hpp>
 #include <hound/type/stride_t.hpp>
 
-#ifndef BIT
-#define BIT(x) ((x) << 3)
-#endif // BIT
-
-
 namespace hd::core {
 using namespace hd::type;
 using namespace hd::global;
