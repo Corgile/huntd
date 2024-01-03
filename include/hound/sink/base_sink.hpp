@@ -6,7 +6,7 @@
 #define HOUND_BASE_SINK_HPP
 
 #include <hound/type/parsed_data.hpp>
-#include <hound/common/core-util.hpp>
+#include <hound/common/core.hpp>
 #include <hound/common/global.hpp>
 #include <hound/type/synced_stream.hpp>
 
@@ -49,10 +49,10 @@ protected:
 
   void fillRawBitVec(ParsedData const& data, std::string& buffer) const {
     using namespace global;
-    core::ProcessByteArray<IP4_PADSIZE>(opt.include_ip4, data.mIP4Head, buffer);
-    core::ProcessByteArray<TCP_PADSIZE>(opt.include_tcp, data.mTcpHead, buffer);
-    core::ProcessByteArray<UDP_PADSIZE>(opt.include_udp, data.mUdpHead, buffer);
-    core::ProcessByteArray(opt.payload > 0, data.mPayload, buffer);
+    core::util::fill<IP4_PADSIZE>(true, data.mIP4Head, buffer);
+    core::util::fill<TCP_PADSIZE>(true, data.mTcpHead, buffer);
+    core::util::fill<UDP_PADSIZE>(true, data.mUdpHead, buffer);
+    core::util::fill(opt.payload > 0, data.mPayload, buffer);
     buffer.pop_back();
   }
 };

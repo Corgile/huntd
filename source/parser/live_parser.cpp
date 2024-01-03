@@ -10,32 +10,13 @@
 #include <hound/sink/impl/json_file_sink.hpp>
 #include <hound/sink/impl/text_file_sink.hpp>
 
-#if defined(SEND_KAFKA)
-
 #include <hound/sink/impl/kafka/kafka_sink.hpp>
 
-#endif
 using namespace hd::global;
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::OpenLiveHandle(opt);
-#if defined(SEND_KAFKA)
-  if (opt.send_kafka) {
-    mSink.reset(new KafkaSink(opt.kafka_config));
-    return;
-  }
-#endif
-  if (opt.output_file.empty()) {
-    mSink.reset(new BaseSink(opt.output_file));
-    return;
-  }
-#ifdef DEAD_MODE
-  if (opt.output_file.ends_with(".json")) {
-    mSink.reset(new JsonFileSink(opt.output_file));
-  } else {
-    mSink.reset(new TextFileSink(opt.output_file));
-  }
-#endif
+  mSink.reset(new KafkaSink(opt.kafka_config));
 }
 
 void hd::type::LiveParser::startCapture() {
@@ -43,7 +24,6 @@ void hd::type::LiveParser::startCapture() {
   for (int i = 0; i < opt.workers; ++i) {
     std::thread(&LiveParser::consumer_job, this).detach();
   }
-#if defined(LIVE_MODE)
   if (opt.duration > 0) {
     /// canceler thread
     std::thread([this] {
@@ -51,7 +31,6 @@ void hd::type::LiveParser::startCapture() {
       this->stopCapture();
     }).detach();
   }
-#endif
   pcap_loop(mHandle, opt.num_packets, liveHandler, reinterpret_cast<byte_t *>(this));
   pcap_close(mHandle);
 }

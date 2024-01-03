@@ -41,14 +41,14 @@ static void LoadKafkaConfig(kafka_config& config, std::string const& fileName) {
 static bool IsFlowReady(PacketList const& existing, hd_packet const& newPacket) {
   if (existing.size() < opt.min_packets) return false;
   return existing.size() == opt.max_packets or
-    existing.back().ts_sec - newPacket.ts_sec >= opt.packetTimeout;
+    existing.back().ts_sec - newPacket.ts_sec >= opt.flowTimeout;
 }
 
+template <typename TimeUnit>
 static long timestampNow() {
   auto const now = std::chrono::system_clock::now();
-  // 转换为自 Unix 纪元以来的秒数
   auto const duration = now.time_since_epoch();
-  return std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+  return std::chrono::duration_cast<TimeUnit>(duration).count();
 }
 
 static void InitGetConf(kafka_config::_conn const& conn,
