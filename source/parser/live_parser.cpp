@@ -8,7 +8,6 @@
 #include <hound/parser/live_parser.hpp>
 
 #include <hound/sink/impl/json_file_sink.hpp>
-#include <hound/sink/impl/text_file_sink.hpp>
 
 #include <hound/sink/impl/kafka/kafka_sink.hpp>
 
