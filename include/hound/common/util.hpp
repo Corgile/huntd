@@ -128,9 +128,9 @@ static void Doc() {
     << "\t-F, --filter=\"filter\"         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
     << "                              " RED("\t非常重要,必须设置并排除镜像流量服务器和kafka集群之间的流量,比如 \"not port 9092\"\n")
     << "\t-f, --fill=0                  空字节填充值 (默认 0)\n"
-    << "\t-D, --duration                D秒后结束抓包\n"
-    << "\t-N, --num                     指定抓包的数量\n"
-    << "\t-E, --timeout                 flow超时时间(新到达的packet距离上一个packet的时间)\n"
+    << "\t-D, --duration=-1             D秒后结束抓包  (默认 -1, non-stop)\n"
+    << "\t-N, --num=-1                  指定抓包的数量 (默认 -1, non-stop)\n"
+    << "\t-E, --timeout=20              flow超时时间(新到达的packet距离上一个packet的时间) (默认 20)\n"
     << "\t-K, --kafka-conf              kafka 配置文件路径\n"
     << "\t-L, --min-packets=10          合并成流/json的时候，指定流的最 小 packet数量 (默认 10)\n"
     << "\t-R, --max-packets=100         合并成流/json的时候，指定流的最 大 packet数量 (默认 100)\n"
