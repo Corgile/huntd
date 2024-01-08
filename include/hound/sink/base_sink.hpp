@@ -39,15 +39,17 @@ public:
   virtual ~BaseSink() = default;
 
 protected:
-  void fillCsvBuffer(ParsedData const& data, std::string& buffer) const {
+  static void fillCsvBuffer(ParsedData const& data, std::string& buffer) {
     using namespace global;
-    buffer.append(data.m5Tuple).append(",");
-    if (opt.caplen) buffer.append(data.mCapLen).append(",");
-    if (opt.timestamp) buffer.append(data.mTimestamp).append(",");
+    //@formatter:off
+    if (opt.include_5tpl)   buffer.append(data.m5Tuple).append(opt.separator);
+    if (opt.include_pktlen) buffer.append(data.mCapLen).append(opt.separator);
+    if (opt.include_ts)     buffer.append(data.mTimestamp).append(opt.separator);
+    //@formatter:on
     fillRawBitVec(data, buffer);
   }
 
-  void fillRawBitVec(ParsedData const& data, std::string& buffer) const {
+  static void fillRawBitVec(ParsedData const& data, std::string& buffer) {
     using namespace global;
     core::util::fill<IP4_PADSIZE>(true, data.mIP4Head, buffer);
     core::util::fill<TCP_PADSIZE>(true, data.mTcpHead, buffer);

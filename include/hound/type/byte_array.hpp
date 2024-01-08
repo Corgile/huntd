@@ -30,7 +30,7 @@ struct ByteArray {
     auto arr = reinterpret_cast<stride_t*>(data);
     for (int i = 0; i < byteLen - 1; ++i) {
       auto v = reinterpret_cast<decltype(stride_t::buffer)>(arr[i]);
-      ret.append(std::to_string(v)).append(",");
+      ret.append(std::to_string(v)).append(global::opt.separator);
     }
     auto v = reinterpret_cast<decltype(stride_t::buffer)>(arr[byteLen - 1]);
     ret.append(std::to_string(v));

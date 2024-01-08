@@ -7,7 +7,6 @@ SET(VENDOR_PATH ${PROJECT_SOURCE_DIR}/vendor)
 SET(CMAKE_MODULE_PATH ${VENDOR_PATH}/cmake;${CMAKE_MODULE_PATH})
 INCLUDE(third-party)
 # !<< vendor
-ADD_COMPILE_DEFINITIONS(LATENCY_TEST)
 MESSAGE(STATUS "${BoldGreen}Binary Target:  ${TARGET}${ColorReset}")
 
 #@formatter:off

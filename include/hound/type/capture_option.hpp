@@ -15,9 +15,10 @@ struct capture_option final {
   int32_t payload{20};
   int32_t num_packets{-1};
   int32_t flowTimeout{20};
-  bool timestamp{false};
+  bool include_ts{false};
+  bool include_pktlen{false};
+  bool include_5tpl{false};
   bool verbose{false};
-  bool caplen{true};
   int32_t fill_bit{0};
 
   int32_t stride{8};
@@ -30,6 +31,11 @@ struct capture_option final {
 
   int32_t duration{-1};
   std::string kafka_config{};
+  std::string pcap_file;
+  int packetTimeout;
+  std::string separator;
+  char format[8] = {'%', 'l', 'd', ','};
+  bool write_file{false};
 
 public:
   void print() const;

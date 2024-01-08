@@ -15,7 +15,12 @@ using namespace hd::global;
 
 hd::type::LiveParser::LiveParser() {
   this->mHandle = util::OpenLiveHandle(opt);
-  mSink.reset(new KafkaSink(opt.kafka_config));
+  if(not opt.kafka_config.empty()) {
+    mSink.reset(new KafkaSink(opt.kafka_config));
+  } else {
+    mSink.reset(new BaseSink());
+  }
+
 }
 
 void hd::type::LiveParser::startCapture() {
