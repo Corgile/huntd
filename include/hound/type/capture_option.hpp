@@ -20,10 +20,11 @@ struct capture_option final {
   int32_t payload{20};
   int32_t num_packets{-1};
   int32_t packetTimeout{20};
-  bool timestamp{false};
   bool verbose{false};
   bool unsign{false};
-  bool caplen{true};
+  bool include_ts{false};
+  bool include_pktlen{false};
+  bool include_5tpl{false};
   int32_t fill_bit{0};
 
   int32_t stride{8};
@@ -37,6 +38,8 @@ struct capture_option final {
   /// mode
   bool write_file{false};
   std::string pcap_file{};
+  char format[8] = {'%', 'l', 'd', ','};
+  std::string_view separator {","};
 
 public:
   void print() const;

@@ -8,7 +8,6 @@
 #include <string>
 #include <hound/type/byte_array.hpp>
 #include <hound/common/global.hpp>
-#include <hound/type/stride_t.hpp>
 
 namespace hd::core {
 using namespace hd::type;
@@ -16,12 +15,10 @@ using namespace hd::global;
 
 class util {
 public:
-  template <int32_t PadBytes = 0>
+  template <int32_t PadBytes = -1>
   static void fill(bool const condition, const ByteArray& rawData, std::string& buffer) {
     if (not condition) return;
-    if (opt.stride <= 0 or opt.stride & opt.stride - 1) return;
-    ___fill(opt.stride, PadBytes, rawData, buffer);
-    if constexpr (PadBytes == 0) { // payload
+    if constexpr (PadBytes == -1) { // payload
       ___fill(opt.stride, opt.payload, rawData, buffer);
     } else ___fill(opt.stride, PadBytes, rawData, buffer);
   }
@@ -58,7 +55,7 @@ private:
     for (; i < raw.byteLen << 3 >> n; ++i) {
       const uint64_t w = (i & r) << n;
       const uint64_t _val = (f << w & p[i >> s]) >> w;//45 00   05 dc a9 93   20 00
-      std::sprintf(buffer, "%ld,", _val);
+      std::sprintf(buffer, opt.format, _val);
       refout.append(buffer);
     }
     for (; i < _exceptedBytes << 3 >> n; ++i) {

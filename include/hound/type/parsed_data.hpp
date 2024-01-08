@@ -50,7 +50,7 @@ public:
     this->mCapLen.assign(std::to_string(mPcapHead.caplen));
     this->mTimestamp.assign(
       std::to_string(mPcapHead.ts_sec)
-      .append(",")
+      .append(global::opt.separator)
       .append(std::to_string(mPcapHead.ts_usec))
     );
     this->HasContent = processRawBytes(data.byte_arr);
@@ -72,7 +72,7 @@ private:
       if (_ether_type == ETHERTYPE_IPV6) {
         hd_debug("ETHERTYPE_IPV6");
       } else
-        hd_debug("不是 ETHERTYPE_IPV4/6");
+      hd_debug("不是 ETHERTYPE_IPV4/6");
       return false;
     }
     return processIPv4Packet(pointer + static_cast<int>(sizeof(ether_header)));
@@ -114,7 +114,7 @@ private:
       // tcp head
       this->mTcpHead = {_tcpOrUdp, _tcpHL};
       // 处理payload
-      int const _byteLen = std::min(ntohs(_ipv4->ip_len) - _ipv4HL - _tcpHL, hd::global::opt.payload);
+      int const _byteLen = std::min(ntohs(_ipv4->ip_len) - _ipv4HL - _tcpHL, global::opt.payload);
       this->mPayload = {&_ipv4RawBytes[_ipv4HL + _tcpHL], _byteLen};
     }
     if (_ipProtocol == IPPROTO_UDP) {
@@ -129,7 +129,7 @@ private:
       // udp head
       this->mUdpHead = {_tcpOrUdp, _udpHL};
       // 处理payload
-      int const _byteLen = std::min(ntohs(_ipv4->ip_len) - _ipv4HL - 8, hd::global::opt.payload);
+      int const _byteLen = std::min(ntohs(_ipv4->ip_len) - _ipv4HL - 8, global::opt.payload);
       this->mPayload = {&_ipv4RawBytes[_ipv4HL + _udpHL], _byteLen};
     }
     return true;

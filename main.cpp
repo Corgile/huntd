@@ -19,7 +19,7 @@ int main(const int argc, char* argv[]) {
   using namespace hd::type;
   hd::util::ParseOptions(opt, argc, argv);
   if (opt.unsign or opt.stride == 1) opt.fill_bit = 0;
-  fillBit = std::to_string(opt.fill_bit).append(",");
+  fillBit = std::to_string(opt.fill_bit).append(opt.separator);
   static std::unique_ptr<DeadParser> deadParser{nullptr};
   static int ctrlc = 0, max__ = 5;
   auto handler = [](int const signal) -> void {

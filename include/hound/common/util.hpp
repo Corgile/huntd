@@ -39,6 +39,8 @@ static option longopts[] = {
 {"kafka", required_argument, nullptr, 'K'},
 /// pcap file path, required when processing a pcapng file.
 {"pcap-file", required_argument, nullptr, 'P'},
+{"sep", required_argument, nullptr, 'm'},
+{"index", required_argument, nullptr, 'I'},
 /// num of bits to convert as an integer
 {"stride", required_argument, nullptr, 'S'},
 /// dump output into a csv_path file
@@ -59,10 +61,9 @@ static option longopts[] = {
 {"timestamp", no_argument, nullptr, 'T'},
 {"caplen", no_argument, nullptr, 'C'},
 {"verbose", no_argument, nullptr, 'V'},
-{"unsigned", no_argument, nullptr, 'U'},
 {nullptr, 0, nullptr, 0}
 };
-static char const* shortopts = "J:P:W:F:f:N:S:L:R:p:CTVUh";
+static char const* shortopts = "J:P:W:F:f:N:S:L:R:p:CTVhIm:";
 #pragma endregion ShortAndLongOptions //@formatter:on
 
 static void SetFilter(pcap_t* handle) {
@@ -123,18 +124,21 @@ static pcap_t* OpenDeadHandle(const capture_option& option, uint32_t& link_type)
 static void Doc() {
   std::cout << "\t选项: " << shortopts << '\n';
   std::cout
-    << "\t-J, --workers=n               处理流量包的线程数\n"
+    << "\t-J, --workers=1               处理流量包的线程数 (默认 1)\n"
     << "\t-F, --filter=\"filter\"         pcap filter (https://linux.die.net/man/7/pcap-filter)\n"
-    << RED("\t                              非常重要,强烈建议排除镜像流量服务器和kafka集群之间的流量\n")
-    << "\t-f, --fill=n                  null字节填充值\n"
-    << "\t-L, --min-packets=n           合并成流/json的时候，指定流的最 小 packet数量\n"
-    << "\t-R, --max-packets=n           合并成流/json的时候，指定流的最 大 packet数量\n"
-    << "\t-P, --pcap-file=/path/file    pcap文件路径, 处理离线 pcap,pcapng 文件\n"
-    << "\t-W, --write=/path/file        输出到文件, 需指定输出文件路径\n"
-    << "\t-S, --stride=n                将 S 位二进制串转换为 uint 数值(默认 8)\n"
-    << "\t-p, --payload=n               包含 n 字节的 payload\n"
+    << "                              " RED("\t非常重要,必须设置并排除镜像流量服务器和kafka集群之间的流量,比如 \"not port 9092\"\n")
+    << "\t-f, --fill=0                  空字节填充值 (默认 0)\n"
+    << "\t-L, --min-packets=10          合并成流/json的时候，指定流的最 小 packet数量 (默认 10)\n"
+    << "\t-R, --max-packets=100         合并成流/json的时候，指定流的最 大 packet数量 (默认 100)\n"
+    << "\t-P, --pcap-file=/path/pcap    pcap文件路径, 处理离线 pcap,pcapng 文件\n"
+    << "\t-W, --write=/path/out         输出到文件, 需指定输出文件路径\n"
+    << "\t-S, --stride=8                将 S 位二进制串转换为 uint 数值 (默认 8)\n"
+    << "\t-p, --payload=0               包含 n 字节的 payload (默认 0)\n"
+    << "\t    --sep=,                   csv列分隔符 (默认 ,)\n"
     << "\t-----------------" CYAN("以下选项不需要传入值")"----------------------------\n"
-    << "\t-T, --timestamp               包含时间戳(秒,毫秒)\n"
+    << "\t-T, --timestamp               包含时间戳(秒,毫秒) (默认 不包含)\n"
+    << "\t-C, --caplen                  包含报文长度 (默认 不包含)\n"
+    << "\t-I, --index                   包含五元组 (默认 不包含)\n"
     << "\t-h, --help                    用法帮助\n"
     << std::endl;
 }
@@ -146,7 +150,7 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
     switch (option) {
     case 'd': arguments.device = optarg;
       break;
-    case 'C': arguments.caplen = true;
+    case 'C': arguments.include_pktlen = true;
       break;
     case 'F': arguments.filter = optarg;
       break;
@@ -162,11 +166,16 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
       break;
     case 'E': arguments.packetTimeout = std::stoi(optarg);
       break;
-    case 'T': arguments.timestamp = true;
+    case 'T': arguments.include_ts = true;
       break;
     case 'V': arguments.verbose = true;
       break;
     case 'U': arguments.unsign = true;
+      break;
+    case 'm': arguments.separator = optarg;
+      std::sprintf(arguments.format, "%s%s", "%ld", optarg);
+      break;
+    case 'I': arguments.include_5tpl = true;
       break;
     case 'J': j = std::stoi(optarg);
       if (j < 1) {
@@ -176,9 +185,8 @@ static void ParseOptions(capture_option& arguments, int argc, char* argv[]) {
       arguments.workers = j;
       break;
     case 'S': arguments.stride = std::stoi(optarg);
-      if (arguments.stride not_eq 1 and arguments.stride not_eq 8 and arguments.stride not_eq 16 and
-        arguments.stride not_eq 32 and arguments.stride not_eq 64) {
-        hd_line("-S,  --stride 只能是1, 8, 16, 32, 64, 现在是", arguments.stride);
+      if (arguments.stride & arguments.stride - 1 or arguments.stride == 0) {
+        hd_line("-S,  --stride 只能是1,2,4,8,16,32,64, 现在是: ", arguments.stride);
         exit(EXIT_FAILURE);
       }
       break;
